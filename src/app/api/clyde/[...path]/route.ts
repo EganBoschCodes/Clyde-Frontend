@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 const DEFAULT_CLYDE_URL = 'http://localhost:8765';
 const BODYLESS_METHODS = new Set(['GET', 'HEAD']);
 const HOP_BY_HOP_HEADERS = ['connection', 'host', 'content-length'];
+const CLIENT_IP_HEADER = 'x-client-ip';
+const UNKNOWN_IP = 'unknown';
 
 type Result<T, E = Error> = [T, null] | [null, E];
 
@@ -22,9 +24,23 @@ function buildUpstreamUrl(req: NextRequest, path: string[]): string {
   return `${base}/api/${path.join('/')}${search}`;
 }
 
+function getClientIp(req: NextRequest): string {
+  const cf = req.headers.get('cf-connecting-ip');
+  if (cf) return cf;
+
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0]?.trim() || UNKNOWN_IP;
+
+  const real = req.headers.get('x-real-ip');
+  if (real) return real;
+
+  return UNKNOWN_IP;
+}
+
 function buildUpstreamHeaders(req: NextRequest): Headers {
   const headers = new Headers(req.headers);
   for (const name of HOP_BY_HOP_HEADERS) headers.delete(name);
+  headers.set(CLIENT_IP_HEADER, getClientIp(req));
   return headers;
 }
 

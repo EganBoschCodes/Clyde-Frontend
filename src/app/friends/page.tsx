@@ -1,22 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-
-type Result<T, E = Error> = [T, null] | [null, E];
+import { useEffect, useState } from 'react';
 
 interface MiniPartyResponse {
   rooms: string[];
   failed: Record<string, string>;
 }
 
+type FireResult =
+  | { kind: 'ok'; body: MiniPartyResponse }
+  | { kind: 'banned'; retryAfterSeconds: number }
+  | { kind: 'error'; message: string };
+
 type Status =
   | { kind: 'idle' }
   | { kind: 'firing' }
   | { kind: 'fired'; count: number }
   | { kind: 'partial'; count: number; failed: Record<string, string> }
+  | { kind: 'banned'; bannedUntil: number }
   | { kind: 'error'; message: string };
 
-async function fireMiniParty(): Promise<Result<MiniPartyResponse>> {
+async function fireMiniParty(): Promise<FireResult> {
   let res: Response;
   try {
     res = await fetch('/api/clyde/friends/mini-party', {
@@ -25,17 +29,31 @@ async function fireMiniParty(): Promise<Result<MiniPartyResponse>> {
       body: '{}',
     });
   } catch (e) {
-    return [null, e instanceof Error ? e : new Error(String(e))];
+    return { kind: 'error', message: e instanceof Error ? e.message : String(e) };
   }
+
+  if (res.status === 429) {
+    const retryAfterSeconds = Number(res.headers.get('retry-after')) || 0;
+    return { kind: 'banned', retryAfterSeconds };
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    return [null, new Error(`HTTP ${res.status}${text ? `: ${text}` : ''}`)];
+    return { kind: 'error', message: `HTTP ${res.status}${text ? `: ${text}` : ''}` };
   }
+
   const body = (await res.json()) as MiniPartyResponse;
-  return [body, null];
+  return { kind: 'ok', body };
 }
 
-function renderStatus(status: Status): string {
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function renderStatus(status: Status, now: number): string {
   switch (status.kind) {
     case 'idle':
       return '';
@@ -46,6 +64,10 @@ function renderStatus(status: Status): string {
     case 'partial': {
       const failedNames = Object.keys(status.failed).join(', ');
       return `Fired on ${status.count}; failed: ${failedNames}`;
+    }
+    case 'banned': {
+      const remaining = formatRemaining(status.bannedUntil - now);
+      return `Too many presses. Try again in ${remaining}.`;
     }
     case 'error':
       return status.message;
@@ -58,21 +80,45 @@ function renderStatus(status: Status): string {
 
 export default function FriendsPage() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (status.kind !== 'banned') return;
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [status.kind]);
+
+  const isBanned = status.kind === 'banned' && status.bannedUntil > now;
+  const disabled = status.kind === 'firing' || isBanned;
 
   const handleClick = async () => {
-    if (status.kind === 'firing') return;
+    if (disabled) return;
     setStatus({ kind: 'firing' });
 
-    const [resp, err] = await fireMiniParty();
-    if (err) {
-      setStatus({ kind: 'error', message: err.message });
-      return;
+    const result = await fireMiniParty();
+    switch (result.kind) {
+      case 'banned':
+        setStatus({ kind: 'banned', bannedUntil: Date.now() + result.retryAfterSeconds * 1000 });
+        return;
+      case 'error':
+        setStatus({ kind: 'error', message: result.message });
+        return;
+      case 'ok': {
+        const { body } = result;
+        if (Object.keys(body.failed).length > 0) {
+          setStatus({ kind: 'partial', count: body.rooms.length, failed: body.failed });
+          return;
+        }
+        setStatus({ kind: 'fired', count: body.rooms.length });
+        return;
+      }
+      default: {
+        const _exhaustive: never = result;
+        throw new Error(`Unhandled result: ${String(_exhaustive)}`);
+      }
     }
-    if (Object.keys(resp.failed).length > 0) {
-      setStatus({ kind: 'partial', count: resp.rooms.length, failed: resp.failed });
-      return;
-    }
-    setStatus({ kind: 'fired', count: resp.rooms.length });
   };
 
   return (
@@ -81,13 +127,13 @@ export default function FriendsPage() {
         <button
           type="button"
           onClick={handleClick}
-          disabled={status.kind === 'firing'}
+          disabled={disabled}
           className="h-64 w-64 rounded-full bg-fuchsia-600 text-white text-3xl font-semibold tracking-tight shadow-2xl shadow-fuchsia-600/40 transition hover:bg-fuchsia-500 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {status.kind === 'firing' ? 'Starting…' : 'Mini Party'}
+          {status.kind === 'firing' ? 'Starting…' : isBanned ? 'Cooling off' : 'Mini Party'}
         </button>
         <p className="h-5 text-sm text-zinc-500" aria-live="polite">
-          {renderStatus(status)}
+          {renderStatus(status, now)}
         </p>
       </div>
     </div>
