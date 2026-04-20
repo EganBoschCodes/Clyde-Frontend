@@ -1,4 +1,5 @@
 import { fetchRooms, fetchStatus } from '@/lib/clyde';
+import RoomControls from './_components/RoomControls';
 
 export default async function Home() {
   const [status, statusErr] = await fetchStatus();
@@ -40,16 +41,16 @@ export default async function Home() {
           ) : (
             <ul className="divide-y divide-zinc-200 dark:divide-zinc-800 rounded border border-zinc-200 dark:border-zinc-800">
               {rooms.rooms.map(room => (
-                <li key={room.name} className="flex items-center justify-between px-4 py-3">
-                  <div>
+                <li key={room.name} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0">
                     <div className="font-medium">{room.name}</div>
                     <div className="text-xs text-zinc-500">
                       {room.lights.length} light{room.lights.length === 1 ? '' : 's'}
+                      <span className="mx-1">·</span>
+                      {room.active_routine ?? 'idle'}
                     </div>
                   </div>
-                  <div className="text-xs text-zinc-500">
-                    {room.active_routine ?? 'idle'}
-                  </div>
+                  <RoomControls room={room.name} />
                 </li>
               ))}
             </ul>
