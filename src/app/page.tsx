@@ -1,18 +1,30 @@
-import { fetchRooms, fetchStatus } from '@/lib/clyde';
+import Link from 'next/link';
+
+import { fetchRooms, fetchRoutines, fetchStatus } from '@/lib/clyde';
 import RoomControls from './_components/RoomControls';
 
 export default async function Home() {
   const [status, statusErr] = await fetchStatus();
   const [rooms, roomsErr] = await fetchRooms();
+  const [routinesData] = await fetchRoutines();
+  const routineNames = routinesData?.routines.map(r => r.name) ?? [];
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 font-sans">
       <main className="mx-auto max-w-3xl px-6 py-16 space-y-10">
-        <header className="space-y-2">
+        <header className="space-y-3">
           <h1 className="text-4xl font-semibold tracking-tight">The Bosch Residence</h1>
           <p className="text-zinc-600 dark:text-zinc-400">
             Clyde frontend — Home Assistant control surface.
           </p>
+          <nav className="flex gap-2">
+            <Link
+              href="/schedules"
+              className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            >
+              Schedules
+            </Link>
+          </nav>
         </header>
 
         <section className="space-y-2">
@@ -50,7 +62,11 @@ export default async function Home() {
                       {room.active_routine ?? 'idle'}
                     </div>
                   </div>
-                  <RoomControls room={room.name} />
+                  <RoomControls
+                    room={room.name}
+                    routines={routineNames}
+                    activeRoutine={room.active_routine}
+                  />
                 </li>
               ))}
             </ul>

@@ -17,6 +17,33 @@ export interface RoomsResponse {
   rooms: RoomStatus[];
 }
 
+export interface ScheduledEvent {
+  event: string;
+  room: string;
+  time: string;
+}
+
+export interface SchedulesResponse {
+  schedules: ScheduledEvent[];
+}
+
+export interface EventInfo {
+  name: string;
+}
+
+export interface EventsResponse {
+  events: EventInfo[];
+}
+
+export interface RoutineInfo {
+  name: string;
+  tick_interval: number;
+}
+
+export interface RoutinesResponse {
+  routines: RoutineInfo[];
+}
+
 function backendUrl(): string {
   return process.env['CLYDE_BACKEND_URL'] ?? DEFAULT_CLYDE_URL;
 }
@@ -44,4 +71,16 @@ export function fetchStatus(): Promise<Result<StatusResponse>> {
 
 export function fetchRooms(): Promise<Result<RoomsResponse>> {
   return getJson<RoomsResponse>('/api/rooms');
+}
+
+export function fetchSchedules(): Promise<Result<SchedulesResponse>> {
+  return getJson<SchedulesResponse>('/api/schedules');
+}
+
+export function fetchEvents(): Promise<Result<EventsResponse>> {
+  return getJson<EventsResponse>('/api/events');
+}
+
+export function fetchRoutines(): Promise<Result<RoutinesResponse>> {
+  return getJson<RoutinesResponse>('/api/routines');
 }
