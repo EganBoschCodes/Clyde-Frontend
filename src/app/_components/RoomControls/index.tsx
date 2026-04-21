@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { Button, Select } from '../shared/Control';
+import * as S from './styles';
+
 const DAYLIGHT_ROUTINE = 'daylight';
 
 type Action = 'routine' | 'off';
@@ -83,43 +86,35 @@ export default function RoomControls({ room, routines, activeRoutine }: RoomCont
     router.refresh();
   }
 
-  const ctrl =
-    'rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50';
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value;
+    setSelected(next);
+    void applyRoutine(next);
+  };
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex gap-2">
+    <S.Container>
+      <S.Row>
         {routines.length > 0 ? (
-          <select
+          <Select
+            $size="sm"
             value={selected}
-            onChange={e => {
-              const next = e.target.value;
-              setSelected(next);
-              void applyRoutine(next);
-            }}
+            onChange={handleSelectChange}
             disabled={pending !== null}
-            className={ctrl}
           >
             {routines.map(r => (
               <option key={r} value={r}>
                 {r}
               </option>
             ))}
-          </select>
+          </Select>
         ) : null}
-        <button
-          type="button"
-          onClick={turnOff}
-          disabled={pending !== null}
-          className={ctrl}
-        >
+        <Button $size="sm" type="button" onClick={turnOff} disabled={pending !== null}>
           {pending === 'off' ? 'Turning off…' : 'Off'}
-        </button>
-      </div>
-      {pending === 'routine' ? (
-        <p className="text-xs text-zinc-500">Applying {selected}…</p>
-      ) : null}
-      {error ? <p className="text-xs text-red-500">{error}</p> : null}
-    </div>
+        </Button>
+      </S.Row>
+      {pending === 'routine' ? <S.Status>Applying {selected}…</S.Status> : null}
+      {error ? <S.Error>{error}</S.Error> : null}
+    </S.Container>
   );
 }

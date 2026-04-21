@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import * as S from './styles';
+
 interface MiniPartyResponse {
   rooms: string[];
   failed: Record<string, string>;
@@ -121,21 +123,16 @@ export default function FriendsPage() {
     }
   };
 
+  const label = status.kind === 'firing' ? 'Starting…' : isBanned ? 'Cooling off' : 'Mini Party';
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 font-sans flex items-center justify-center px-6">
-      <div className="flex flex-col items-center gap-6">
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={disabled}
-          className="h-64 w-64 rounded-full bg-fuchsia-600 text-white text-3xl font-semibold tracking-tight shadow-2xl shadow-fuchsia-600/40 transition hover:bg-fuchsia-500 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {status.kind === 'firing' ? 'Starting…' : isBanned ? 'Cooling off' : 'Mini Party'}
-        </button>
-        <p className="h-5 text-sm text-zinc-500" aria-live="polite">
-          {renderStatus(status, now)}
-        </p>
-      </div>
-    </div>
+    <S.Screen>
+      <S.Stack>
+        <S.PartyButton type="button" onClick={handleClick} disabled={disabled}>
+          {label}
+        </S.PartyButton>
+        <S.StatusText aria-live="polite">{renderStatus(status, now)}</S.StatusText>
+      </S.Stack>
+    </S.Screen>
   );
 }

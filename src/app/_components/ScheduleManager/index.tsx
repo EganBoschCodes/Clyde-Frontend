@@ -5,10 +5,10 @@ import { useState } from 'react';
 
 import type { ScheduledEvent } from '@/lib/clyde';
 
-const INPUT_CLS =
-  'rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm';
-const BTN_CLS =
-  'rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50';
+import { Button, Input, Select } from '../shared/Control';
+import { List, ListRow, RowBody, RowMeta, RowTitle } from '../shared/List';
+import { FaintText, Section, SectionHeading } from '../shared/Section';
+import * as S from './styles';
 
 interface ScheduleManagerProps {
   initialSchedules: ScheduledEvent[];
@@ -139,96 +139,89 @@ export default function ScheduleManager({
     router.refresh();
   };
 
-  return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <h2 className="text-sm uppercase tracking-wider text-zinc-500">Existing</h2>
-        {sorted.length === 0 ? (
-          <p className="text-sm text-zinc-500">No schedules yet.</p>
-        ) : (
-          <ul className="divide-y divide-zinc-200 dark:divide-zinc-800 rounded border border-zinc-200 dark:border-zinc-800">
-            {sorted.map(s => {
-              const key = scheduleKey(s);
-              const rowError = deleteErrors[key];
-              return (
-                <li key={key} className="flex items-center justify-between gap-4 px-4 py-3">
-                  <div className="min-w-0">
-                    <div className="font-medium">{humanizeEvent(s.event)}</div>
-                    <div className="text-xs text-zinc-500">
-                      {s.room}
-                      <span className="mx-1">·</span>
-                      {formatTime(s.time)}
-                    </div>
-                    {rowError ? <p className="mt-1 text-xs text-red-500">{rowError}</p> : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(s)}
-                    disabled={deletingKey !== null}
-                    className={BTN_CLS}
-                  >
-                    {deletingKey === key ? 'Removing…' : 'Remove'}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+  const renderScheduleRow = (s: ScheduledEvent) => {
+    const key = scheduleKey(s);
+    const rowError = deleteErrors[key];
+    return (
+      <ListRow key={key}>
+        <RowBody>
+          <RowTitle>{humanizeEvent(s.event)}</RowTitle>
+          <RowMeta>
+            {s.room}
+            <span className="sep">·</span>
+            {formatTime(s.time)}
+          </RowMeta>
+          {rowError ? <S.RowError>{rowError}</S.RowError> : null}
+        </RowBody>
+        <Button type="button" onClick={() => handleDelete(s)} disabled={deletingKey !== null}>
+          {deletingKey === key ? 'Removing…' : 'Remove'}
+        </Button>
+      </ListRow>
+    );
+  };
 
-      <section className="space-y-3">
-        <h2 className="text-sm uppercase tracking-wider text-zinc-500">Add</h2>
-        {rooms.length === 0 || events.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            {rooms.length === 0 ? 'No rooms configured.' : 'No events available.'}
-          </p>
+  const canAdd = rooms.length > 0 && events.length > 0;
+  const emptyMessage = rooms.length === 0 ? 'No rooms configured.' : 'No events available.';
+
+  return (
+    <S.Container>
+      <Section>
+        <SectionHeading>Existing</SectionHeading>
+        {sorted.length === 0 ? (
+          <FaintText>No schedules yet.</FaintText>
         ) : (
-          <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-xs text-zinc-500">
+          <List>{sorted.map(renderScheduleRow)}</List>
+        )}
+      </Section>
+
+      <Section>
+        <SectionHeading>Add</SectionHeading>
+        {!canAdd ? (
+          <FaintText>{emptyMessage}</FaintText>
+        ) : (
+          <S.Form onSubmit={handleAdd}>
+            <S.Field>
               Event
-              <select
+              <Select
                 value={form.event}
                 onChange={e => setForm(f => ({ ...f, event: e.target.value }))}
-                className={INPUT_CLS}
               >
                 {events.map(ev => (
                   <option key={ev} value={ev}>
                     {humanizeEvent(ev)}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500">
+              </Select>
+            </S.Field>
+            <S.Field>
               Room
-              <select
+              <Select
                 value={form.room}
                 onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-                className={INPUT_CLS}
               >
                 {rooms.map(r => (
                   <option key={r} value={r}>
                     {r}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500">
+              </Select>
+            </S.Field>
+            <S.Field>
               Time
-              <input
+              <Input
                 type="time"
                 value={form.time}
                 onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
                 required
-                className={INPUT_CLS}
               />
-            </label>
-            <button type="submit" disabled={adding} className={BTN_CLS}>
+            </S.Field>
+            <Button type="submit" disabled={adding}>
               {adding ? 'Adding…' : 'Add'}
-            </button>
-            {addError ? <p className="w-full text-xs text-red-500">{addError}</p> : null}
-          </form>
+            </Button>
+            {addError ? <S.FormError>{addError}</S.FormError> : null}
+          </S.Form>
         )}
-      </section>
-    </div>
+      </Section>
+    </S.Container>
   );
 }

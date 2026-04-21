@@ -1,7 +1,29 @@
-import Link from 'next/link';
-
 import { fetchRooms, fetchRoutines, fetchStatus } from '@/lib/clyde';
+
+import PageShell from './_components/shared/PageShell';
 import RoomControls from './_components/RoomControls';
+import {
+  List,
+  ListRow,
+  RowBody,
+  RowMeta,
+  RowTitle,
+} from './_components/shared/List';
+import {
+  Header,
+  Nav,
+  PageLede,
+  PageTitle,
+} from './_components/shared/Header';
+import { NavLink } from './_components/shared/NavLink';
+import {
+  ErrorBanner,
+  ErrorText,
+  FaintText,
+  Section,
+  SectionHeading,
+} from './_components/shared/Section';
+import { Mono, Sep, StatusLine } from './_components/HomePageStyles';
 
 export default async function Home() {
   const [status, statusErr] = await fetchStatus();
@@ -10,69 +32,56 @@ export default async function Home() {
   const routineNames = routinesData?.routines.map(r => r.name) ?? [];
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 font-sans">
-      <main className="mx-auto max-w-3xl px-6 py-16 space-y-10">
-        <header className="space-y-3">
-          <h1 className="text-4xl font-semibold tracking-tight">The Bosch Residence</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Clyde frontend — Home Assistant control surface.
-          </p>
-          <nav className="flex gap-2">
-            <Link
-              href="/schedules"
-              className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900"
-            >
-              Schedules
-            </Link>
-          </nav>
-        </header>
+    <PageShell>
+      <Header>
+        <PageTitle>The Bosch Residence</PageTitle>
+        <PageLede>Clyde frontend — Home Assistant control surface.</PageLede>
+        <Nav>
+          <NavLink href="/schedules">Schedules</NavLink>
+        </Nav>
+      </Header>
 
-        <section className="space-y-2">
-          <h2 className="text-sm uppercase tracking-wider text-zinc-500">Backend</h2>
-          {statusErr ? (
-            <p className="rounded border border-red-500/40 bg-red-500/5 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-              Clyde unreachable: {statusErr.message}
-            </p>
-          ) : (
-            <p className="text-sm">
-              <span className="font-mono">{status.service}</span>{' '}
-              <span className="text-zinc-500">·</span>{' '}
-              <span className="font-mono">{status.status}</span>
-            </p>
-          )}
-        </section>
+      <Section>
+        <SectionHeading>Backend</SectionHeading>
+        {statusErr ? (
+          <ErrorBanner>Clyde unreachable: {statusErr.message}</ErrorBanner>
+        ) : (
+          <StatusLine>
+            <Mono>{status.service}</Mono>
+            <Sep>·</Sep>
+            <Mono>{status.status}</Mono>
+          </StatusLine>
+        )}
+      </Section>
 
-        <section className="space-y-3">
-          <h2 className="text-sm uppercase tracking-wider text-zinc-500">Rooms</h2>
-          {roomsErr ? (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              Failed to load rooms: {roomsErr.message}
-            </p>
-          ) : rooms.rooms.length === 0 ? (
-            <p className="text-sm text-zinc-500">No rooms configured.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-800 rounded border border-zinc-200 dark:border-zinc-800">
-              {rooms.rooms.map(room => (
-                <li key={room.name} className="flex items-center justify-between gap-4 px-4 py-3">
-                  <div className="min-w-0">
-                    <div className="font-medium">{room.name}</div>
-                    <div className="text-xs text-zinc-500">
-                      {room.lights.length} light{room.lights.length === 1 ? '' : 's'}
-                      <span className="mx-1">·</span>
-                      {room.active_routine ?? 'idle'}
-                    </div>
-                  </div>
-                  <RoomControls
-                    room={room.name}
-                    routines={routineNames}
-                    activeRoutine={room.active_routine}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </main>
-    </div>
+      <Section>
+        <SectionHeading>Rooms</SectionHeading>
+        {roomsErr ? (
+          <ErrorText>Failed to load rooms: {roomsErr.message}</ErrorText>
+        ) : rooms.rooms.length === 0 ? (
+          <FaintText>No rooms configured.</FaintText>
+        ) : (
+          <List>
+            {rooms.rooms.map(room => (
+              <ListRow key={room.name}>
+                <RowBody>
+                  <RowTitle>{room.name}</RowTitle>
+                  <RowMeta>
+                    {room.lights.length} light{room.lights.length === 1 ? '' : 's'}
+                    <span className="sep">·</span>
+                    {room.active_routine ?? 'idle'}
+                  </RowMeta>
+                </RowBody>
+                <RoomControls
+                  room={room.name}
+                  routines={routineNames}
+                  activeRoutine={room.active_routine}
+                />
+              </ListRow>
+            ))}
+          </List>
+        )}
+      </Section>
+    </PageShell>
   );
 }
