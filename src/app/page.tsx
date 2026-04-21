@@ -76,6 +76,7 @@ export default async function Home() {
                   room={room.name}
                   routines={routineNames}
                   activeRoutine={room.active_routine}
+                  dimFactor={room.dim_factor}
                 />
               </ListRow>
             ))}

@@ -1,19 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button, Select } from '../shared/Control';
 import * as S from './styles';
 
 const DAYLIGHT_ROUTINE = 'daylight';
+const DIM_COMMIT_DELAY_MS = 200;
+const DIM_MIN = 0;
+const DIM_MAX = 1;
+const DIM_STEP = 0.01;
 
-type Action = 'routine' | 'off';
+type Action = 'routine' | 'off' | 'dim';
 
 interface RoomControlsProps {
   room: string;
   routines: string[];
   activeRoutine: string | null;
+  dimFactor: number;
 }
 
 async function parseErrorBody(res: Response): Promise<string> {
@@ -29,6 +34,22 @@ async function setRoomRoutine(room: string, routine: string): Promise<Error | nu
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ routine }),
+    });
+  } catch (e) {
+    return e instanceof Error ? e : new Error(String(e));
+  }
+  if (res.ok) return null;
+  return new Error(await parseErrorBody(res));
+}
+
+async function setRoomDim(room: string, factor: number): Promise<Error | null> {
+  const url = `/api/clyde/rooms/${encodeURIComponent(room)}/dim`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ room, factor }),
     });
   } catch (e) {
     return e instanceof Error ? e : new Error(String(e));
@@ -55,11 +76,19 @@ function initialSelection(activeRoutine: string | null, routines: string[]): str
   return routines[0] ?? '';
 }
 
-export default function RoomControls({ room, routines, activeRoutine }: RoomControlsProps) {
+export default function RoomControls({ room, routines, activeRoutine, dimFactor }: RoomControlsProps) {
   const router = useRouter();
   const [pending, setPending] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(() => initialSelection(activeRoutine, routines));
+  const [dim, setDim] = useState<number>(dimFactor);
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (commitTimer.current) clearTimeout(commitTimer.current);
+    };
+  }, []);
 
   async function applyRoutine(routine: string) {
     if (!routine) return;
@@ -85,6 +114,27 @@ export default function RoomControls({ room, routines, activeRoutine }: RoomCont
     }
     router.refresh();
   }
+
+  async function commitDim(factor: number) {
+    setPending('dim');
+    setError(null);
+    const err = await setRoomDim(room, factor);
+    setPending(null);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    router.refresh();
+  }
+
+  const handleDimChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = Number(e.target.value);
+    setDim(next);
+    if (commitTimer.current) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => {
+      void commitDim(next);
+    }, DIM_COMMIT_DELAY_MS);
+  };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value;
@@ -113,6 +163,20 @@ export default function RoomControls({ room, routines, activeRoutine }: RoomCont
           {pending === 'off' ? 'Turning off…' : 'Off'}
         </Button>
       </S.Row>
+      <S.DimRow>
+        <S.DimLabel>Dim</S.DimLabel>
+        <S.DimSlider
+          type="range"
+          min={DIM_MIN}
+          max={DIM_MAX}
+          step={DIM_STEP}
+          value={dim}
+          onChange={handleDimChange}
+          disabled={pending !== null && pending !== 'dim'}
+          aria-label={`${room} dim factor`}
+        />
+        <S.DimValue>{Math.round(dim * 100)}%</S.DimValue>
+      </S.DimRow>
       {pending === 'routine' ? <S.Status>Applying {selected}…</S.Status> : null}
       {error ? <S.Error>{error}</S.Error> : null}
     </S.Container>

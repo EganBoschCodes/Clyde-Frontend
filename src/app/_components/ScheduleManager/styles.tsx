@@ -35,3 +35,10 @@ export const FormError = styled.p`
   font-size: ${theme.fontSize.xs};
   color: ${theme.colors.danger};
 `;
+
+export const FormStatus = styled.p`
+  margin: 0;
+  width: 100%;
+  font-size: ${theme.fontSize.xs};
+  color: ${theme.colors.textFaint};
+`;

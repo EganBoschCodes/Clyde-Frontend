@@ -11,6 +11,7 @@ export interface RoomStatus {
   name: string;
   lights: string[];
   active_routine: string | null;
+  dim_factor: number;
 }
 
 export interface RoomsResponse {

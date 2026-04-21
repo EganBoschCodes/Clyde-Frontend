@@ -42,6 +42,21 @@ async function createSchedule(payload: ScheduledEvent): Promise<Error | null> {
   return new Error(await parseErrorBody(res));
 }
 
+async function testEvent(room: string, event: string): Promise<Error | null> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/clyde/rooms/${encodeURIComponent(room)}/event`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ room, event }),
+    });
+  } catch (e) {
+    return e instanceof Error ? e : new Error(String(e));
+  }
+  if (res.ok) return null;
+  return new Error(await parseErrorBody(res));
+}
+
 async function removeSchedule(payload: ScheduledEvent): Promise<Error | null> {
   const qs = new URLSearchParams({
     event: payload.event,
@@ -99,6 +114,9 @@ export default function ScheduleManager({
   });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testStatus, setTestStatus] = useState<string | null>(null);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
 
@@ -118,6 +136,22 @@ export default function ScheduleManager({
       return;
     }
     router.refresh();
+  };
+
+  const handleTest = async () => {
+    if (!form.room || !form.event) return;
+
+    setTesting(true);
+    setTestError(null);
+    setTestStatus(null);
+
+    const err = await testEvent(form.room, form.event);
+    setTesting(false);
+    if (err) {
+      setTestError(err.message);
+      return;
+    }
+    setTestStatus(`Fired ${humanizeEvent(form.event)} in ${form.room}.`);
   };
 
   const handleDelete = async (sched: ScheduledEvent) => {
@@ -215,10 +249,15 @@ export default function ScheduleManager({
                 required
               />
             </S.Field>
-            <Button type="submit" disabled={adding}>
+            <Button type="submit" disabled={adding || testing}>
               {adding ? 'Adding…' : 'Add'}
             </Button>
+            <Button type="button" onClick={handleTest} disabled={adding || testing}>
+              {testing ? 'Testing…' : 'Test'}
+            </Button>
             {addError ? <S.FormError>{addError}</S.FormError> : null}
+            {testError ? <S.FormError>{testError}</S.FormError> : null}
+            {testStatus ? <S.FormStatus>{testStatus}</S.FormStatus> : null}
           </S.Form>
         )}
       </Section>
