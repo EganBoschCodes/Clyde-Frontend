@@ -1,7 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+import { useRoomLive } from '@/lib/realtime/useRoomLive';
 
 import { Select, Toggle } from '../shared/Control';
 import * as S from './styles';
@@ -77,8 +78,11 @@ function initialSelection(activeRoutine: string | null, routines: string[]): str
 }
 
 export default function RoomControls({ room, routines, activeRoutine, dimFactor }: RoomControlsProps) {
-  const router = useRouter();
-  const isOn = activeRoutine !== null;
+  const live = useRoomLive(room);
+  const effectiveRoutine =
+    live.activeRoutine !== undefined ? live.activeRoutine : activeRoutine;
+  const effectiveDim = live.dimFactor !== undefined ? live.dimFactor : dimFactor;
+  const isOn = effectiveRoutine !== null;
   const [pending, setPending] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(() => initialSelection(activeRoutine, routines));
@@ -89,6 +93,10 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   useEffect(() => {
     setOptimisticOn(isOn);
   }, [isOn]);
+
+  useEffect(() => {
+    if (pending !== 'dim') setDim(effectiveDim);
+  }, [effectiveDim, pending]);
 
   useEffect(() => {
     return () => {
@@ -106,9 +114,7 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
     if (err) {
       setOptimisticOn(isOn);
       setError(err.message);
-      return;
     }
-    router.refresh();
   }
 
   async function turnOff() {
@@ -120,9 +126,7 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
     if (err) {
       setOptimisticOn(isOn);
       setError(err.message);
-      return;
     }
-    router.refresh();
   }
 
   async function commitDim(factor: number) {
@@ -132,9 +136,7 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
     setPending(null);
     if (err) {
       setError(err.message);
-      return;
     }
-    router.refresh();
   }
 
   const handleDimChange = (e: React.ChangeEvent<HTMLInputElement>) => {

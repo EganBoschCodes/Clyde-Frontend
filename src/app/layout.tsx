@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
+import RealtimeProvider from '@/lib/realtime/RealtimeProvider';
 import StyledRegistry from '@/lib/styledRegistry';
 
 import './globals.css';
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <StyledRegistry>{children}</StyledRegistry>
+        <StyledRegistry>
+          <RealtimeProvider>{children}</RealtimeProvider>
+        </StyledRegistry>
       </body>
     </html>
   );

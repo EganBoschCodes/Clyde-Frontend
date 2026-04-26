@@ -6,6 +6,7 @@ import type { LightState, LightStateResponse } from '@/lib/clyde';
 
 import * as S from './styles';
 
+// TODO: replace polling with `light_state` realtime events once the backend emits them.
 const POLL_INTERVAL_MS = 3000;
 const MIN_GLOW_OPACITY = 0.15;
 const MAX_BRIGHTNESS = 255;
