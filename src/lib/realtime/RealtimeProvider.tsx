@@ -1,23 +1,36 @@
 'use client';
 
-import { createContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import type { RealtimeEvent } from './messages';
+import type { LightOnEvent, RealtimeEvent } from './messages';
 
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30000;
 
 type RoomStateMap = Map<string, { active_routine: string | null }>;
 type RoomDimMap = Map<string, number>;
+type LightOnSubscriber = (event: LightOnEvent) => void;
 
 interface RealtimeContextValue {
   roomState: RoomStateMap;
   roomDim: RoomDimMap;
+  subscribeLightOn: (cb: LightOnSubscriber) => () => void;
 }
+
+const noopUnsubscribe = () => {};
 
 export const RealtimeContext = createContext<RealtimeContextValue>({
   roomState: new Map(),
   roomDim: new Map(),
+  subscribeLightOn: () => noopUnsubscribe,
 });
 
 interface RealtimeProviderProps {
@@ -31,6 +44,14 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
   const backoffRef = useRef(INITIAL_BACKOFF_MS);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
+  const lightSubscribers = useRef<Set<LightOnSubscriber>>(new Set());
+
+  const subscribeLightOn = useCallback((cb: LightOnSubscriber) => {
+    lightSubscribers.current.add(cb);
+    return () => {
+      lightSubscribers.current.delete(cb);
+    };
+  }, []);
 
   useEffect(() => {
     cancelled.current = false;
@@ -72,6 +93,10 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
           });
           return;
         }
+        if (evt.type === 'light_on') {
+          for (const cb of lightSubscribers.current) cb(evt);
+          return;
+        }
       };
 
       ws.onclose = () => {
@@ -97,9 +122,10 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
     };
   }, []);
 
-  return (
-    <RealtimeContext.Provider value={{ roomState, roomDim }}>
-      {children}
-    </RealtimeContext.Provider>
+  const value = useMemo<RealtimeContextValue>(
+    () => ({ roomState, roomDim, subscribeLightOn }),
+    [roomState, roomDim, subscribeLightOn],
   );
+
+  return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }

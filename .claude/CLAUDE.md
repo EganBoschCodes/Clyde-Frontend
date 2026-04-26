@@ -9,6 +9,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Web frontend for Clyde, our local Home Assistant MCP + API server. Runs on the
 Pi and is exposed at `theboschresidence.com` via a Cloudflare tunnel.
 
+IMPORTANT: Use the write-typescript skill before touching any .ts or .tsx files, and the write-react before touching any .tsx files. This is gated by a hook, so any attempt to skip this will fail the edit.
+
 ## Scope
 
 - UI for controlling rooms, lights, and routines via Clyde's HTTP API.

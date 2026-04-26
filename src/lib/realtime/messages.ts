@@ -10,4 +10,13 @@ export interface RoomDimEvent {
   factor: number;
 }
 
-export type RealtimeEvent = RoomStateEvent | RoomDimEvent;
+export interface LightOnEvent {
+  type: 'light_on';
+  room: string;
+  light: string;
+  rgb_color: [number, number, number] | null;
+  brightness: number | null;
+  transition: number | null;
+}
+
+export type RealtimeEvent = RoomStateEvent | RoomDimEvent | LightOnEvent;
