@@ -39,6 +39,7 @@ export default async function Home() {
         <PageLede>Clyde frontend — Home Assistant control surface.</PageLede>
         <Nav>
           <NavLink href="/schedules">Schedules</NavLink>
+          <NavLink href="/friends">Party</NavLink>
         </Nav>
       </Header>
 
