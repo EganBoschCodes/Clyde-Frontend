@@ -71,7 +71,7 @@ export default async function Home() {
       {!roomsErr && rooms.rooms.length > 0 ? (
         <Section>
           <SectionHeading>Floorplan</SectionHeading>
-          <Floorplan lights={rooms.rooms.flatMap(r => r.lights)} />
+          <Floorplan rooms={rooms.rooms.map(r => ({ name: r.name, lights: r.lights }))} />
         </Section>
       ) : null}
     </PageShell>

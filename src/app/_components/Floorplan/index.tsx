@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { LightState, LightStateResponse } from '@/lib/clyde';
 import { RealtimeContext } from '@/lib/realtime/RealtimeProvider';
@@ -29,8 +29,13 @@ const LAMP_POSITIONS: Record<string, LampPosition> = {
   kitchen_island_2: { x: 1500, y: 780 },
 };
 
-interface FloorplanProps {
+interface FloorplanRoom {
+  name: string;
   lights: string[];
+}
+
+interface FloorplanProps {
+  rooms: FloorplanRoom[];
 }
 
 interface RenderedLight {
@@ -131,8 +136,14 @@ function renderLamp(name: string, pos: LampPosition, rendered: RenderedLight | u
   );
 }
 
-export default function Floorplan({ lights }: FloorplanProps) {
-  const { subscribeLightOn } = useContext(RealtimeContext);
+export default function Floorplan({ rooms }: FloorplanProps) {
+  const { subscribeLightOn, subscribeRoomState } = useContext(RealtimeContext);
+  const lights = useMemo(() => rooms.flatMap(r => r.lights), [rooms]);
+  const roomLights = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const r of rooms) map[r.name] = r.lights;
+    return map;
+  }, [rooms]);
   const renderedRef = useRef<Record<string, RenderedLight>>({});
   const animationsRef = useRef<Record<string, LightAnimation>>({});
   const rafRef = useRef<number | null>(null);
@@ -232,6 +243,23 @@ export default function Floorplan({ lights }: FloorplanProps) {
       }
     };
   }, [subscribeLightOn]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeRoomState(evt => {
+      if (evt.active_routine !== null) return;
+      const roomLightNames = roomLights[evt.room];
+      if (!roomLightNames) return;
+      let changed = false;
+      for (const light of roomLightNames) {
+        if (!(light in LAMP_POSITIONS)) continue;
+        delete animationsRef.current[light];
+        renderedRef.current[light] = OFF_RENDERED;
+        changed = true;
+      }
+      if (changed) forceRender();
+    });
+    return unsubscribe;
+  }, [subscribeRoomState, roomLights]);
 
   const mapped = lights.filter(l => l in LAMP_POSITIONS);
 

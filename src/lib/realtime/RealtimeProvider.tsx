@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import type { LightOnEvent, RealtimeEvent } from './messages';
+import type { LightOnEvent, RealtimeEvent, RoomStateEvent } from './messages';
 
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30000;
@@ -18,11 +18,13 @@ const MAX_BACKOFF_MS = 30000;
 type RoomStateMap = Map<string, { active_routine: string | null }>;
 type RoomDimMap = Map<string, number>;
 type LightOnSubscriber = (event: LightOnEvent) => void;
+type RoomStateSubscriber = (event: RoomStateEvent) => void;
 
 interface RealtimeContextValue {
   roomState: RoomStateMap;
   roomDim: RoomDimMap;
   subscribeLightOn: (cb: LightOnSubscriber) => () => void;
+  subscribeRoomState: (cb: RoomStateSubscriber) => () => void;
 }
 
 const noopUnsubscribe = () => {};
@@ -31,6 +33,7 @@ export const RealtimeContext = createContext<RealtimeContextValue>({
   roomState: new Map(),
   roomDim: new Map(),
   subscribeLightOn: () => noopUnsubscribe,
+  subscribeRoomState: () => noopUnsubscribe,
 });
 
 interface RealtimeProviderProps {
@@ -45,11 +48,19 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
   const lightSubscribers = useRef<Set<LightOnSubscriber>>(new Set());
+  const roomStateSubscribers = useRef<Set<RoomStateSubscriber>>(new Set());
 
   const subscribeLightOn = useCallback((cb: LightOnSubscriber) => {
     lightSubscribers.current.add(cb);
     return () => {
       lightSubscribers.current.delete(cb);
+    };
+  }, []);
+
+  const subscribeRoomState = useCallback((cb: RoomStateSubscriber) => {
+    roomStateSubscribers.current.add(cb);
+    return () => {
+      roomStateSubscribers.current.delete(cb);
     };
   }, []);
 
@@ -83,6 +94,7 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
             next.set(evt.room, { active_routine: evt.active_routine });
             return next;
           });
+          for (const cb of roomStateSubscribers.current) cb(evt);
           return;
         }
         if (evt.type === 'room_dim') {
@@ -123,8 +135,8 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
   }, []);
 
   const value = useMemo<RealtimeContextValue>(
-    () => ({ roomState, roomDim, subscribeLightOn }),
-    [roomState, roomDim, subscribeLightOn],
+    () => ({ roomState, roomDim, subscribeLightOn, subscribeRoomState }),
+    [roomState, roomDim, subscribeLightOn, subscribeRoomState],
   );
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;

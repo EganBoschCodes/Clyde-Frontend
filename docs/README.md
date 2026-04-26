@@ -49,6 +49,7 @@ Next.js 16 App Router with TypeScript, styled-components, and Tailwind v4 (`@tai
 | `src/app/_components/ScheduleManager/` | Schedule CRUD UI |
 | `src/app/_components/shared/` | Reusable UI primitives |
 | `src/lib/clyde.ts` | Server-side Clyde API client |
+| `src/lib/realtime/` | Websocket client + React context for live `room_state`, `room_dim`, and `light_on` events |
 | `src/lib/styledRegistry.tsx` | styled-components SSR registry |
 
 ---
@@ -61,8 +62,9 @@ Clyde runs at `http://localhost:8765` (started via `../Clyde/run`). Success resp
 |--------|-------------------|
 | Client components | `fetch('/api/clyde/<path>')` — hits the Next proxy |
 | Server components / route handlers | Import from `@/lib/clyde`, calls `CLYDE_BACKEND_URL` directly |
+| Realtime UI | Connects to `NEXT_PUBLIC_CLYDE_WS_URL` from `src/lib/realtime/RealtimeProvider.tsx` |
 
-`CLYDE_BACKEND_URL` is set in `.env.local` (defaults to `http://localhost:8765`). Template in `.env.example`. Never call `localhost:8765` from the browser — it is not on the tunnel.
+`CLYDE_BACKEND_URL` is set in `.env.local` (defaults to `http://localhost:8765`). `NEXT_PUBLIC_CLYDE_WS_URL` points at Clyde's websocket (e.g. `ws://localhost:8765/api/ws`). Templates in `.env.example`. Never call `localhost:8765` from the browser — it is not on the tunnel.
 
 ---
 
@@ -83,4 +85,4 @@ Clyde runs at `http://localhost:8765` (started via `../Clyde/run`). Success resp
 
 ---
 
-*Last updated: v0.1.0*
+*Last updated: v0.1.1*
