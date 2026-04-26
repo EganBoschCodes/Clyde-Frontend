@@ -45,6 +45,17 @@ export interface RoutinesResponse {
   routines: RoutineInfo[];
 }
 
+export interface LightState {
+  on: boolean;
+  brightness: number | null;
+  rgb_color: [number, number, number] | null;
+}
+
+export interface LightStateResponse {
+  light: string;
+  state: LightState;
+}
+
 function backendUrl(): string {
   return process.env['CLYDE_BACKEND_URL'] ?? DEFAULT_CLYDE_URL;
 }

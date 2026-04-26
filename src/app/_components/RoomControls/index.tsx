@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Select } from '../shared/Control';
+import { Select, Toggle } from '../shared/Control';
 import * as S from './styles';
 
 const DAYLIGHT_ROUTINE = 'daylight';
@@ -78,11 +78,17 @@ function initialSelection(activeRoutine: string | null, routines: string[]): str
 
 export default function RoomControls({ room, routines, activeRoutine, dimFactor }: RoomControlsProps) {
   const router = useRouter();
+  const isOn = activeRoutine !== null;
   const [pending, setPending] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(() => initialSelection(activeRoutine, routines));
+  const [optimisticOn, setOptimisticOn] = useState<boolean>(isOn);
   const [dim, setDim] = useState<number>(dimFactor);
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setOptimisticOn(isOn);
+  }, [isOn]);
 
   useEffect(() => {
     return () => {
@@ -94,9 +100,11 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
     if (!routine) return;
     setPending('routine');
     setError(null);
+    setOptimisticOn(true);
     const err = await setRoomRoutine(room, routine);
     setPending(null);
     if (err) {
+      setOptimisticOn(isOn);
       setError(err.message);
       return;
     }
@@ -106,9 +114,11 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   async function turnOff() {
     setPending('off');
     setError(null);
+    setOptimisticOn(false);
     const err = await turnRoomLightsOff(room);
     setPending(null);
     if (err) {
+      setOptimisticOn(isOn);
       setError(err.message);
       return;
     }
@@ -137,39 +147,47 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelected(e.target.value);
+    const next = e.target.value;
+    setSelected(next);
+    if (optimisticOn && next) void applyRoutine(next);
   };
+
+  const handleToggle = () => {
+    if (optimisticOn) {
+      void turnOff();
+      return;
+    }
+    void applyRoutine(selected);
+  };
+
+  const toggleDisabled = pending !== null || (!optimisticOn && !selected);
 
   return (
     <S.Container>
       <S.Row>
         {routines.length > 0 ? (
-          <>
-            <Select
-              $size="sm"
-              value={selected}
-              onChange={handleSelectChange}
-              disabled={pending !== null}
-            >
-              {routines.map(r => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </Select>
-            <Button
-              $size="sm"
-              type="button"
-              onClick={() => void applyRoutine(selected)}
-              disabled={pending !== null || !selected}
-            >
-              {pending === 'routine' ? 'Turning on…' : 'On'}
-            </Button>
-          </>
+          <Select
+            $size="sm"
+            value={selected}
+            onChange={handleSelectChange}
+            disabled={pending !== null}
+          >
+            {routines.map(r => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </Select>
         ) : null}
-        <Button $size="sm" type="button" onClick={turnOff} disabled={pending !== null}>
-          {pending === 'off' ? 'Turning off…' : 'Off'}
-        </Button>
+        <Toggle
+          type="button"
+          role="switch"
+          aria-checked={optimisticOn}
+          aria-label={`${room} lights ${optimisticOn ? 'on' : 'off'}`}
+          $on={optimisticOn}
+          onClick={handleToggle}
+          disabled={toggleDisabled}
+        />
       </S.Row>
       <S.DimRow>
         <S.DimLabel>Dim</S.DimLabel>

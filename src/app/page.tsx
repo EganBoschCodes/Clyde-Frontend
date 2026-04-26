@@ -1,6 +1,7 @@
 import { fetchRooms, fetchRoutines, fetchStatus } from '@/lib/clyde';
 
 import PageShell from './_components/shared/PageShell';
+import Floorplan from './_components/Floorplan';
 import RoomControls from './_components/RoomControls';
 import {
   List,
@@ -83,6 +84,13 @@ export default async function Home() {
           </List>
         )}
       </Section>
+
+      {!roomsErr && rooms.rooms.length > 0 ? (
+        <Section>
+          <SectionHeading>Floorplan</SectionHeading>
+          <Floorplan lights={rooms.rooms.flatMap(r => r.lights)} />
+        </Section>
+      ) : null}
     </PageShell>
   );
 }

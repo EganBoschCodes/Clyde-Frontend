@@ -63,3 +63,44 @@ export const Input = styled.input<ControlProps>`
     background: transparent;
   }
 `;
+
+interface ToggleProps {
+  $on: boolean;
+}
+
+const TOGGLE_TRACK_WIDTH = 36;
+const TOGGLE_TRACK_HEIGHT = 20;
+const TOGGLE_THUMB_SIZE = 14;
+const TOGGLE_THUMB_INSET = (TOGGLE_TRACK_HEIGHT - TOGGLE_THUMB_SIZE) / 2;
+const TOGGLE_THUMB_TRAVEL = TOGGLE_TRACK_WIDTH - TOGGLE_THUMB_SIZE - TOGGLE_THUMB_INSET * 2;
+
+export const Toggle = styled.button<ToggleProps>`
+  position: relative;
+  width: ${TOGGLE_TRACK_WIDTH}px;
+  height: ${TOGGLE_TRACK_HEIGHT}px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: ${theme.radius.full};
+  border: 1px solid ${theme.colors.border};
+  background: ${props => (props.$on ? theme.colors.accent : 'transparent')};
+  cursor: pointer;
+  transition: background-color 120ms ease, opacity 120ms ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: ${TOGGLE_THUMB_INSET - 1}px;
+    left: ${TOGGLE_THUMB_INSET - 1}px;
+    width: ${TOGGLE_THUMB_SIZE}px;
+    height: ${TOGGLE_THUMB_SIZE}px;
+    border-radius: ${theme.radius.full};
+    background: ${theme.colors.text};
+    transform: translateX(${props => (props.$on ? `${TOGGLE_THUMB_TRAVEL}px` : '0')});
+    transition: transform 140ms ease;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
