@@ -14,12 +14,6 @@ export const Row = styled.div`
   gap: ${theme.spacing.sm};
 `;
 
-export const Status = styled.p`
-  margin: 0;
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.textFaint};
-`;
-
 export const DimRow = styled.div`
   display: flex;
   align-items: center;

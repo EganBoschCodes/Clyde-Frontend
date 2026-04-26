@@ -205,7 +205,6 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
         />
         <S.DimValue>{Math.round(dim * 100)}%</S.DimValue>
       </S.DimRow>
-      {pending === 'routine' ? <S.Status>Applying {selected}…</S.Status> : null}
       {error ? <S.Error>{error}</S.Error> : null}
     </S.Container>
   );
