@@ -22,6 +22,7 @@ export interface ScheduledEvent {
   event: string;
   room: string;
   time: string;
+  days_of_week: number[];
 }
 
 export interface SchedulesResponse {

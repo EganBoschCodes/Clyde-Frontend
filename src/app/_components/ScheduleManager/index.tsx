@@ -20,7 +20,11 @@ interface FormState {
   event: string;
   room: string;
   time: string;
+  days_of_week: number[];
 }
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 async function parseErrorBody(res: Response): Promise<string> {
   const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -81,6 +85,16 @@ function humanizeEvent(name: string): string {
   return name.replace(/_/g, ' ');
 }
 
+function formatDays(days: number[]): string {
+  if (days.length === 7) return 'Every day';
+  if (days.length === 5 && [0, 1, 2, 3, 4].every(d => days.includes(d))) return 'Weekdays';
+  if (days.length === 2 && [5, 6].every(d => days.includes(d))) return 'Weekends';
+  return [...days]
+    .sort((a, b) => a - b)
+    .map(d => DAY_LABELS[d])
+    .join(', ');
+}
+
 function formatTime(t: string): string {
   const [hhRaw, mmRaw] = t.split(':');
   const hour = Number(hhRaw);
@@ -111,6 +125,7 @@ export default function ScheduleManager({
     event: defaultEvent,
     room: defaultRoom,
     time: '07:00',
+    days_of_week: [...ALL_DAYS],
   });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -125,6 +140,10 @@ export default function ScheduleManager({
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.room) return;
+    if (form.days_of_week.length === 0) {
+      setAddError('Pick at least one day of the week.');
+      return;
+    }
 
     setAdding(true);
     setAddError(null);
@@ -136,6 +155,14 @@ export default function ScheduleManager({
       return;
     }
     router.refresh();
+  };
+
+  const toggleDay = (day: number) => {
+    setForm(f => {
+      const has = f.days_of_week.includes(day);
+      const next = has ? f.days_of_week.filter(d => d !== day) : [...f.days_of_week, day];
+      return { ...f, days_of_week: next.sort((a, b) => a - b) };
+    });
   };
 
   const handleTest = async () => {
@@ -184,6 +211,8 @@ export default function ScheduleManager({
             {s.room}
             <span className="sep">·</span>
             {formatTime(s.time)}
+            <span className="sep">·</span>
+            {formatDays(s.days_of_week)}
           </RowMeta>
           {rowError ? <S.RowError>{rowError}</S.RowError> : null}
         </RowBody>
@@ -214,47 +243,70 @@ export default function ScheduleManager({
           <FaintText>{emptyMessage}</FaintText>
         ) : (
           <S.Form onSubmit={handleAdd}>
-            <S.Field>
-              Event
-              <Select
-                value={form.event}
-                onChange={e => setForm(f => ({ ...f, event: e.target.value }))}
-              >
-                {events.map(ev => (
-                  <option key={ev} value={ev}>
-                    {humanizeEvent(ev)}
-                  </option>
-                ))}
-              </Select>
-            </S.Field>
-            <S.Field>
-              Room
-              <Select
-                value={form.room}
-                onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
-              >
-                {rooms.map(r => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </Select>
-            </S.Field>
-            <S.Field>
-              Time
-              <Input
-                type="time"
-                value={form.time}
-                onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                required
-              />
-            </S.Field>
-            <Button type="submit" disabled={adding || testing}>
-              {adding ? 'Adding…' : 'Add'}
-            </Button>
-            <Button type="button" onClick={handleTest} disabled={adding || testing}>
-              {testing ? 'Testing…' : 'Test'}
-            </Button>
+            <S.FieldsGrid>
+              <S.Field>
+                Event
+                <Select
+                  value={form.event}
+                  onChange={e => setForm(f => ({ ...f, event: e.target.value }))}
+                >
+                  {events.map(ev => (
+                    <option key={ev} value={ev}>
+                      {humanizeEvent(ev)}
+                    </option>
+                  ))}
+                </Select>
+              </S.Field>
+              <S.Field>
+                Room
+                <Select
+                  value={form.room}
+                  onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
+                >
+                  {rooms.map(r => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </Select>
+              </S.Field>
+              <S.Field>
+                Time
+                <Input
+                  type="time"
+                  value={form.time}
+                  onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                  required
+                />
+              </S.Field>
+            </S.FieldsGrid>
+            <S.DaysField>
+              Days
+              <S.DaysRow>
+                {DAY_LABELS.map((label, day) => {
+                  const active = form.days_of_week.includes(day);
+                  return (
+                    <S.DayToggle
+                      key={day}
+                      type="button"
+                      $active={active}
+                      aria-pressed={active}
+                      onClick={() => toggleDay(day)}
+                    >
+                      {label}
+                    </S.DayToggle>
+                  );
+                })}
+              </S.DaysRow>
+            </S.DaysField>
+            <S.Actions>
+              <Button type="button" onClick={handleTest} disabled={adding || testing}>
+                {testing ? 'Testing…' : 'Test'}
+              </Button>
+              <Button type="submit" disabled={adding || testing}>
+                {adding ? 'Adding…' : 'Add'}
+              </Button>
+            </S.Actions>
             {addError ? <S.FormError>{addError}</S.FormError> : null}
             {testError ? <S.FormError>{testError}</S.FormError> : null}
             {testStatus ? <S.FormStatus>{testStatus}</S.FormStatus> : null}

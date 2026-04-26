@@ -17,7 +17,7 @@ export default async function SchedulesPage() {
       <Header>
         <BackLink href="/">← Home</BackLink>
         <PageTitle>Schedules</PageTitle>
-        <PageLede>Daily triggers fire once per day at the given local time.</PageLede>
+        <PageLede>Triggers fire at the given local time on the days of the week you select.</PageLede>
       </Header>
 
       {loadError || !schedulesData || !roomsData || !eventsData ? (
