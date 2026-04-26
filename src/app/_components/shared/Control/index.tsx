@@ -48,6 +48,11 @@ export const Button = styled.button<ControlProps>`
 export const Select = styled.select<ControlProps>`
   ${controlBase}
   appearance: auto;
+
+  & option {
+    background: ${theme.colors.surface};
+    color: ${theme.colors.text};
+  }
 `;
 
 export const Input = styled.input<ControlProps>`

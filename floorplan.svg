@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 1100" stroke="#000" fill="none" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- Outer walls (perimeter, clockwise from top-left) -->
+  <path stroke-width="12" d="
+    M 60 70
+    H 1450
+    V 200
+    H 1700
+    V 560
+    H 1820
+    V 1015
+    H 1010
+    V 970
+    H 880
+    V 1015
+    H 60
+    Z
+  "/>
+
+  <!-- Interior room-separating walls -->
+  <g stroke-width="9">
+    <!-- Bedroom 1 / Bedroom 2 dividing wall -->
+    <line x1="540" y1="70" x2="540" y2="600"/>
+
+    <!-- Bedroom 2 / Living dividing wall -->
+    <line x1="1080" y1="70" x2="1080" y2="600"/>
+
+    <!-- Bedrooms south wall (bedrooms vs central hallway) -->
+    <line x1="60" y1="600" x2="1080" y2="600"/>
+
+    <!-- Hallway south wall / Bathrooms north wall -->
+    <line x1="60" y1="800" x2="800" y2="800"/>
+
+    <!-- Bath 1 / Bath 2 dividing wall -->
+    <line x1="420" y1="800" x2="420" y2="1015"/>
+
+    <!-- Bath 2 east wall (bathrooms vs entry hallway) -->
+    <line x1="800" y1="800" x2="800" y2="1015"/>
+  </g>
+</svg>

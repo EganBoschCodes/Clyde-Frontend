@@ -137,27 +137,35 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const next = e.target.value;
-    setSelected(next);
-    void applyRoutine(next);
+    setSelected(e.target.value);
   };
 
   return (
     <S.Container>
       <S.Row>
         {routines.length > 0 ? (
-          <Select
-            $size="sm"
-            value={selected}
-            onChange={handleSelectChange}
-            disabled={pending !== null}
-          >
-            {routines.map(r => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </Select>
+          <>
+            <Select
+              $size="sm"
+              value={selected}
+              onChange={handleSelectChange}
+              disabled={pending !== null}
+            >
+              {routines.map(r => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </Select>
+            <Button
+              $size="sm"
+              type="button"
+              onClick={() => void applyRoutine(selected)}
+              disabled={pending !== null || !selected}
+            >
+              {pending === 'routine' ? 'Turning on…' : 'On'}
+            </Button>
+          </>
         ) : null}
         <Button $size="sm" type="button" onClick={turnOff} disabled={pending !== null}>
           {pending === 'off' ? 'Turning off…' : 'Off'}
