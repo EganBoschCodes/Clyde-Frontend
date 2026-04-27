@@ -85,4 +85,4 @@ Clyde runs at `http://localhost:8765` (started via `../Clyde/run`). Success resp
 
 ---
 
-*Last updated: v0.1.1*
+*Last updated: v0.1.2*
