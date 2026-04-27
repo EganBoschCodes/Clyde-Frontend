@@ -172,7 +172,6 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
             $size="sm"
             value={selected}
             onChange={handleSelectChange}
-            disabled={pending !== null}
           >
             {routines.map(r => (
               <option key={r} value={r}>
@@ -200,7 +199,6 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
           step={DIM_STEP}
           value={dim}
           onChange={handleDimChange}
-          disabled={pending !== null && pending !== 'dim'}
           aria-label={`${room} dim factor`}
         />
         <S.DimValue>{Math.round(dim * 100)}%</S.DimValue>
