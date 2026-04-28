@@ -27,9 +27,9 @@ const LAMP_POSITIONS: Record<string, LampPosition> = {
   living_room_lamp_2: { x: 1210, y: 150 },
   kitchen_island_1: { x: 1250, y: 780 },
   kitchen_island_2: { x: 1500, y: 780 },
-  dining_table_1: { x: 1720, y: 930 },
+  dining_table_1: { x: 1720, y: 910 },
   dining_table_2: { x: 1720, y: 780 },
-  dining_table_3: { x: 1720, y: 630 },
+  dining_table_3: { x: 1720, y: 650 },
 };
 
 interface FloorplanRoom {
