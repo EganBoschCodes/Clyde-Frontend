@@ -11,6 +11,8 @@ Pi and is exposed at `theboschresidence.com` via a Cloudflare tunnel.
 
 IMPORTANT: Use the write-typescript skill before touching any .ts or .tsx files, and the write-react before touching any .tsx files. This is gated by a hook, so any attempt to skip this will fail the edit.
 
+Read `docs/design.md` before UI changes.
+
 ## Scope
 
 - UI for controlling rooms, lights, and routines via Clyde's HTTP API.

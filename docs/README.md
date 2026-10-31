@@ -81,6 +81,7 @@ Clyde runs at `http://localhost:8765` (started via `../Clyde/run`). Success resp
 
 | Document | Description |
 |----------|-------------|
+| [design.md](./design.md) | Design system and UI conventions: tokens, layout, components, accessibility, new-page checklist |
 | [changelogs/](./changelogs/) | Version history and release notes |
 
 ---
