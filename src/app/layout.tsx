@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import RealtimeProvider from '@/lib/realtime/RealtimeProvider';
 import StyledRegistry from '@/lib/styledRegistry';
 
-import AppNav from './_components/AppNav';
+import AppShell from './_components/AppShell';
 import './globals.css';
 
 const geistSans = Geist({
@@ -41,8 +41,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         <StyledRegistry>
           <RealtimeProvider>
-            <AppNav />
-            {children}
+            <AppShell>{children}</AppShell>
           </RealtimeProvider>
         </StyledRegistry>
       </body>

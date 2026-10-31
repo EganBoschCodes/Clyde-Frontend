@@ -1,18 +1,18 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 import { theme } from '@/styles/theme';
 
-export const Screen = styled.div`
+export const screenStyles = css`
   flex: 1;
   background: ${theme.colors.background};
   color: ${theme.colors.text};
 `;
 
-export const Main = styled.main<{ $isWide: boolean }>`
+export const mainStyles = css<{ $isWide: boolean }>`
   margin: 0 auto;
   width: 100%;
   max-width: ${({ $isWide }) => ($isWide ? theme.maxWidth.wide : theme.maxWidth.main)};
-  padding: ${theme.spacing.lg} ${theme.spacing.lg}
+  padding: max(${theme.spacing.lg}, env(safe-area-inset-top, 0px)) ${theme.spacing.lg}
     calc(${theme.size.tabBar} + env(safe-area-inset-bottom, 0px) + ${theme.spacing.xl});
   display: flex;
   flex-direction: column;
@@ -22,4 +22,12 @@ export const Main = styled.main<{ $isWide: boolean }>`
     padding: ${theme.spacing.xl} ${theme.spacing.xl} ${theme.spacing.xxl};
     gap: ${theme.spacing.xl};
   }
+`;
+
+export const Screen = styled.div`
+  ${screenStyles}
+`;
+
+export const Main = styled.main<{ $isWide: boolean }>`
+  ${mainStyles}
 `;
