@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+
+import { RealtimeContext } from '@/lib/realtime/RealtimeProvider';
+import { titleCase } from '@/lib/text/titleCase';
 
 import PageHeader from '../_components/shared/PageHeader';
 import PageShell from '../_components/shared/PageShell';
@@ -57,7 +60,7 @@ function formatRemaining(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function renderStatus(status: Status, now: number): string {
+function renderStatus(status: Status, now: number, labels: ReadonlyMap<string, string>): string {
   switch (status.kind) {
     case 'idle':
       return '';
@@ -66,7 +69,9 @@ function renderStatus(status: Status, now: number): string {
     case 'fired':
       return `Fired on ${status.count} room${status.count === 1 ? '' : 's'}.`;
     case 'partial': {
-      const failedNames = Object.keys(status.failed).join(', ');
+      const failedNames = Object.keys(status.failed)
+        .map(room => labels.get(room) ?? titleCase(room))
+        .join(', ');
       return `Fired on ${status.count}; failed: ${failedNames}`;
     }
     case 'banned': {
@@ -85,6 +90,7 @@ function renderStatus(status: Status, now: number): string {
 export default function FriendsPage() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const [now, setNow] = useState(() => Date.now());
+  const { roomLabels } = useContext(RealtimeContext);
 
   useEffect(() => {
     if (status.kind !== 'banned') return;
@@ -134,7 +140,7 @@ export default function FriendsPage() {
         <S.PartyButton type="button" onClick={handleClick} disabled={disabled}>
           {label}
         </S.PartyButton>
-        <S.StatusText aria-live="polite">{renderStatus(status, now)}</S.StatusText>
+        <S.StatusText aria-live="polite">{renderStatus(status, now, roomLabels)}</S.StatusText>
       </S.Stage>
     </PageShell>
   );

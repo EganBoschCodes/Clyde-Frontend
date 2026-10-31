@@ -105,3 +105,16 @@ export const FormStatus = styled.p`
   font-size: ${theme.fontSize.sm};
   color: ${theme.colors.textMuted};
 `;
+
+export const ConfirmRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing.sm};
+  flex-shrink: 0;
+`;
+
+export const ConfirmText = styled.span`
+  font-size: ${theme.fontSize.sm};
+  font-weight: ${theme.fontWeight.medium};
+  color: ${theme.colors.dangerText};
+`;

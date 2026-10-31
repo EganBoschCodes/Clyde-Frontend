@@ -139,6 +139,7 @@ export default function ScheduleManager({
   const [testError, setTestError] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [confirmingKey, setConfirmingKey] = useState<string | null>(null);
   const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
 
   const sorted = sortSchedules(initialSchedules);
@@ -189,6 +190,7 @@ export default function ScheduleManager({
 
   const handleDelete = async (sched: ScheduledEvent) => {
     const key = scheduleKey(sched);
+    setConfirmingKey(null);
     setDeletingKey(key);
     setDeleteErrors(prev => {
       if (!(key in prev)) return prev;
@@ -204,6 +206,27 @@ export default function ScheduleManager({
       return;
     }
     router.refresh();
+  };
+
+  const renderRowActions = (s: ScheduledEvent, key: string) => {
+    if (confirmingKey === key) {
+      return (
+        <S.ConfirmRow role="group" aria-label="Confirm removal">
+          <S.ConfirmText>Remove?</S.ConfirmText>
+          <Button type="button" $tone="danger" onClick={() => handleDelete(s)}>
+            Yes
+          </Button>
+          <Button type="button" onClick={() => setConfirmingKey(null)}>
+            No
+          </Button>
+        </S.ConfirmRow>
+      );
+    }
+    return (
+      <Button type="button" $tone="danger" onClick={() => setConfirmingKey(key)} disabled={deletingKey !== null}>
+        {deletingKey === key ? 'Removing…' : 'Remove'}
+      </Button>
+    );
   };
 
   const renderScheduleRow = (s: ScheduledEvent) => {
@@ -222,9 +245,7 @@ export default function ScheduleManager({
           </RowMeta>
           {rowError ? <S.RowError>{rowError}</S.RowError> : null}
         </RowBody>
-        <Button type="button" $tone="danger" onClick={() => handleDelete(s)} disabled={deletingKey !== null}>
-          {deletingKey === key ? 'Removing…' : 'Remove'}
-        </Button>
+        {renderRowActions(s, key)}
       </ListRow>
     );
   };
