@@ -1,19 +1,26 @@
 export const theme = {
   colors: {
-    background: '#000000',
-    surface: '#09090b',
-    surfaceHover: '#18181b',
+    background: '#050507',
+    surface: '#0e0e12',
+    surfaceRaised: '#16161c',
+    surfaceHover: '#1d1d25',
+    surfaceTrack: '#23232c',
     border: '#3f3f46',
+    borderSubtle: 'rgba(255, 255, 255, 0.08)',
     divider: '#27272a',
     text: '#fafafa',
     textMuted: '#a1a1aa',
     textFaint: '#71717a',
     accent: '#c026d3',
     accentHover: '#d946ef',
+    accentSoft: 'rgba(192, 38, 211, 0.16)',
+    accentText: '#f0abfc',
+    onAccent: '#ffffff',
     danger: '#ef4444',
     dangerText: '#f87171',
     dangerBorder: 'rgba(239, 68, 68, 0.4)',
     dangerBg: 'rgba(239, 68, 68, 0.05)',
+    scrim: 'rgba(5, 5, 7, 0.82)',
   },
   spacing: {
     xs: '4px',
@@ -26,7 +33,9 @@ export const theme = {
   },
   radius: {
     sm: '4px',
-    md: '6px',
+    md: '10px',
+    lg: '16px',
+    xl: '24px',
     full: '9999px',
   },
   fontSize: {
@@ -34,16 +43,36 @@ export const theme = {
     sm: '14px',
     base: '16px',
     lg: '18px',
+    xl: '22px',
     xxl: '30px',
-    hero: '36px',
+    stat: '28px',
+    hero: '34px',
   },
   fontWeight: {
     regular: 400,
     medium: 500,
     semibold: 600,
+    bold: 700,
+  },
+  shadow: {
+    card: '0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.8)',
+    glow: '0 12px 40px -12px rgba(192, 38, 211, 0.5)',
+  },
+  size: {
+    touch: '48px',
+    touchSm: '44px',
+    dimTrack: '60px',
+    power: '56px',
+    tabBar: '64px',
+    topBar: '64px',
+  },
+  breakpoint: {
+    tablet: '768px',
+    desktop: '1100px',
   },
   maxWidth: {
     main: '768px',
+    wide: '1080px',
   },
 } as const;
 

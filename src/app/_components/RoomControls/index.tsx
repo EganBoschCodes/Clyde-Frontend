@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useRoomLive } from '@/lib/realtime/useRoomLive';
+import { setRoomDim } from '@/lib/roomApi/setRoomDim';
+import { setRoomRoutine } from '@/lib/roomApi/setRoomRoutine';
+import { turnRoomLightsOff } from '@/lib/roomApi/turnRoomLightsOff';
 
+import DimControl from '../DimControl';
 import { Select, Toggle } from '../shared/Control';
 import * as S from './styles';
 
 const DAYLIGHT_ROUTINE = 'daylight';
 const DIM_COMMIT_DELAY_MS = 200;
-const DIM_MIN = 0;
-const DIM_MAX = 1;
-const DIM_STEP = 0.01;
 
 type Action = 'routine' | 'off' | 'dim';
 
@@ -20,55 +21,6 @@ interface RoomControlsProps {
   routines: string[];
   activeRoutine: string | null;
   dimFactor: number;
-}
-
-async function parseErrorBody(res: Response): Promise<string> {
-  const body = (await res.json().catch(() => null)) as { error?: string } | null;
-  return body?.error ?? `HTTP ${res.status}`;
-}
-
-async function setRoomRoutine(room: string, routine: string): Promise<Error | null> {
-  const url = `/api/clyde/rooms/${encodeURIComponent(room)}/routine`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ routine }),
-    });
-  } catch (e) {
-    return e instanceof Error ? e : new Error(String(e));
-  }
-  if (res.ok) return null;
-  return new Error(await parseErrorBody(res));
-}
-
-async function setRoomDim(room: string, factor: number): Promise<Error | null> {
-  const url = `/api/clyde/rooms/${encodeURIComponent(room)}/dim`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ room, factor }),
-    });
-  } catch (e) {
-    return e instanceof Error ? e : new Error(String(e));
-  }
-  if (res.ok) return null;
-  return new Error(await parseErrorBody(res));
-}
-
-async function turnRoomLightsOff(room: string): Promise<Error | null> {
-  const url = `/api/clyde/rooms/${encodeURIComponent(room)}/lights`;
-  let res: Response;
-  try {
-    res = await fetch(url, { method: 'DELETE' });
-  } catch (e) {
-    return e instanceof Error ? e : new Error(String(e));
-  }
-  if (res.ok) return null;
-  return new Error(await parseErrorBody(res));
 }
 
 function initialSelection(activeRoutine: string | null, routines: string[]): string {
@@ -88,6 +40,8 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   const [selected, setSelected] = useState<string>(() => initialSelection(activeRoutine, routines));
   const [optimisticOn, setOptimisticOn] = useState<boolean>(isOn);
   const [dim, setDim] = useState<number>(dimFactor);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDimDirty, setIsDimDirty] = useState(false);
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -95,8 +49,9 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
   }, [isOn]);
 
   useEffect(() => {
-    if (pending !== 'dim') setDim(effectiveDim);
-  }, [effectiveDim, pending]);
+    if (isDragging || isDimDirty) return;
+    setDim(effectiveDim);
+  }, [effectiveDim, isDragging, isDimDirty]);
 
   useEffect(() => {
     return () => {
@@ -134,14 +89,15 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
     setError(null);
     const err = await setRoomDim(room, factor);
     setPending(null);
+    setIsDimDirty(false);
     if (err) {
       setError(err.message);
     }
   }
 
-  const handleDimChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Number(e.target.value);
+  const handleDimChange = (next: number) => {
     setDim(next);
+    setIsDimDirty(true);
     if (commitTimer.current) clearTimeout(commitTimer.current);
     commitTimer.current = setTimeout(() => {
       void commitDim(next);
@@ -190,19 +146,14 @@ export default function RoomControls({ room, routines, activeRoutine, dimFactor 
           disabled={toggleDisabled}
         />
       </S.Row>
-      <S.DimRow>
-        <S.DimLabel>Dim</S.DimLabel>
-        <S.DimSlider
-          type="range"
-          min={DIM_MIN}
-          max={DIM_MAX}
-          step={DIM_STEP}
+      <S.DimWrap>
+        <DimControl
           value={dim}
+          label={`${room} brightness`}
           onChange={handleDimChange}
-          aria-label={`${room} dim factor`}
+          onActiveChange={setIsDragging}
         />
-        <S.DimValue>{Math.round(dim * 100)}%</S.DimValue>
-      </S.DimRow>
+      </S.DimWrap>
       {error ? <S.Error>{error}</S.Error> : null}
     </S.Container>
   );
