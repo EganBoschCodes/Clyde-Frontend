@@ -12,6 +12,7 @@ export interface RoomStatus {
   display_name?: string;
   lights: string[];
   active_routine: string | null;
+  active_event?: string | null;
   dim_factor: number;
 }
 
@@ -41,6 +42,8 @@ export interface EventsResponse {
 export interface RoutineInfo {
   name: string;
   tick_interval: number;
+  custom?: boolean;
+  display_name?: string;
 }
 
 export interface RoutinesResponse {

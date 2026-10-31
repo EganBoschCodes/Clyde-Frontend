@@ -10,6 +10,12 @@ export interface RoomDimEvent {
   factor: number;
 }
 
+export interface RoomEventEvent {
+  type: 'room_event';
+  room: string;
+  active_event: string | null;
+}
+
 export interface LightOnEvent {
   type: 'light_on';
   room: string;
@@ -19,4 +25,4 @@ export interface LightOnEvent {
   transition: number | null;
 }
 
-export type RealtimeEvent = RoomStateEvent | RoomDimEvent | LightOnEvent;
+export type RealtimeEvent = RoomStateEvent | RoomDimEvent | RoomEventEvent | LightOnEvent;
