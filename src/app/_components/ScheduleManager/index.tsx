@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import type { ScheduledEvent } from '@/lib/clyde';
 
-import { Button, Input, Select } from '../shared/Control';
+import { Button, Select, TimeInput } from '../shared/Control';
 import { List, ListRow, RowBody, RowMeta, RowTitle } from '../shared/List';
 import { FaintText, Section, SectionHeading } from '../shared/Section';
 import * as S from './styles';
@@ -107,7 +107,7 @@ function formatTime(t: string): string {
   if (Number.isNaN(hour)) return t;
   const period = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minute} ${period}`;
+  return `${displayHour}:${minute}\u00a0${period}`;
 }
 
 function sortSchedules(schedules: ScheduledEvent[]): ScheduledEvent[] {
@@ -239,8 +239,10 @@ export default function ScheduleManager({
           <RowMeta>
             {roomLabels.get(s.room) ?? s.room}
             <span className="sep">·</span>
+            <wbr />
             {formatTime(s.time)}
             <span className="sep">·</span>
+            <wbr />
             {formatDays(s.days_of_week)}
           </RowMeta>
           {rowError ? <S.RowError>{rowError}</S.RowError> : null}
@@ -299,7 +301,7 @@ export default function ScheduleManager({
               </S.Field>
               <S.Field>
                 Time
-                <Input
+                <TimeInput
                   type="time"
                   value={form.time}
                   onChange={e => setForm(f => ({ ...f, time: e.target.value }))}

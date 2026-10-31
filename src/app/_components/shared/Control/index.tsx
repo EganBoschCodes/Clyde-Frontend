@@ -78,3 +78,26 @@ export const Input = styled.input<ControlProps>`
   ${controlBase}
   cursor: text;
 `;
+
+// iOS Safari gives date and time inputs an intrinsic width and ignores width: 100%
+// unless native appearance is reset, which overflows the card at phone widths
+export const TimeInput = styled(Input)`
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+  line-height: ${theme.size.touch};
+
+  &::-webkit-date-and-time-value {
+    min-width: 0;
+    margin: 0;
+    text-align: left;
+  }
+
+  &::-webkit-datetime-edit {
+    padding: 0;
+  }
+`;

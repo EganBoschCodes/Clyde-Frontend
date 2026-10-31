@@ -164,7 +164,7 @@ Folder convention: `Component/index.tsx` plus `Component/styles.tsx` imported as
 
 | Component | When to use |
 |-----------|-------------|
-| `shared/Control` (`Button`, `Select`, `Input`) | Standard form controls. 48px, 16px font, `radius.md`. `$tone` is `default`, `primary` (neutral accent fill), or `danger` (outlined red). One `primary` per form. |
+| `shared/Control` (`Button`, `Select`, `Input`, `TimeInput`) | Standard form controls; `TimeInput` for `type="time"`. 48px, 16px font, `radius.md`. `$tone` is `default`, `primary` (neutral accent fill), or `danger` (outlined red). One `primary` per form. |
 | `PowerButton` | Circular on/off switch (`role="switch"`). Off: raised surface with strong border. On: filled with the live glow color. 56px. |
 | `DimControl` | Brightness slider plus four presets (5, 20, 50, 100%). See gesture rules below. |
 | Pills (`RoutinePill`, `AllOffButton`) | 44px high, fully rounded, `borderStrong`. Used for secondary actions that open or fire something. |
@@ -306,8 +306,9 @@ Reduced-motion users get no animation; state changes still apply instantly.
 - **Never call the backend port from the browser.** Client code fetches `/api/clyde/<path>` (the Next proxy, which supports GET, POST, PUT, PATCH and DELETE). Server components use `@/lib/clyde`.
 - **Bun only.** Never use node, npm, or npx. Use `bun`, `bun run`, `bun x`.
 - **Next 16 differs from older versions.** Check `node_modules/next/dist/docs/` before using a Next API you are unsure of. Error boundaries receive `unstable_retry`.
+- **Grids of small buttons break the 44px rule at 360px.** Seven day toggles in a card are only about 38px wide, so the schedule day picker is 4 columns on phones and 7 from 768px.
 - **Use `minmax(0, 1fr)`** in grids and `min-width: 0` on flex children that hold text or form controls. Without them, long content or an intrinsic input width pushes the layout past the card.
-- **Native `input[type=time|date]` on iOS Safari** has an intrinsic minimum width and ignores `width: 100%` unless appearance is reset. Use the `TimeInput` treatment described under Schedules (display block, `appearance: none`, `min-width: 0`, `max-width: 100%`, inner value left-aligned).
+- **Native `input[type=time|date]` on iOS Safari** has an intrinsic minimum width and ignores `width: 100%` unless appearance is reset. Use `TimeInput` from `shared/Control` (display block, `appearance: none`, `min-width: 0`, `max-width: 100%`, inner value left-aligned).
 - **Hooks that subscribe to realtime** must unsubscribe in cleanup; seeds from HTTP must be aborted on unmount (`AbortController`).
 - **Sheets lock body scroll** by setting `overflow: hidden` on `body`; restore the previous value on close, not `''`.
 - **Never send state-changing requests from tests or screenshots** against the real backend; these are real lights.

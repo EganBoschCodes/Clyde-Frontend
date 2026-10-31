@@ -9,6 +9,7 @@ export const Container = styled.div`
 `;
 
 export const Form = styled.form`
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: ${theme.spacing.lg};
@@ -41,10 +42,12 @@ export const Field = styled.label`
   & > input {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
   }
 `;
 
 export const DaysField = styled.div`
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: ${theme.spacing.xs};
@@ -54,8 +57,13 @@ export const DaysField = styled.div`
 
 export const DaysRow = styled.div`
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: ${theme.spacing.xs};
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: ${theme.spacing.sm};
+
+  @media (min-width: ${theme.breakpoint.tablet}) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: ${theme.spacing.xs};
+  }
 `;
 
 export const DayToggle = styled.button<{ $active: boolean }>`
@@ -111,6 +119,7 @@ export const ConfirmRow = styled.div`
   align-items: center;
   gap: ${theme.spacing.sm};
   flex-shrink: 0;
+  margin-left: auto;
 `;
 
 export const ConfirmText = styled.span`

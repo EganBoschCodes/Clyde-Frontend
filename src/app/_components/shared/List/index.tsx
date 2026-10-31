@@ -13,6 +13,7 @@ export const List = styled.ul`
 
 export const ListRow = styled.li`
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: ${theme.spacing.md};
@@ -24,6 +25,7 @@ export const ListRow = styled.li`
 `;
 
 export const RowBody = styled.div`
+  flex: 1 1 140px;
   min-width: 0;
   display: flex;
   flex-direction: column;
