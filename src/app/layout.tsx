@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import RealtimeProvider from '@/lib/realtime/RealtimeProvider';
 import StyledRegistry from '@/lib/styledRegistry';
 
+import AppNav from './_components/AppNav';
 import './globals.css';
 
 const geistSans = Geist({
@@ -19,6 +20,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'The Bosch Residence',
   description: 'Clyde — Home Assistant control surface',
+  appleWebApp: { capable: true, title: 'Bosch Home', statusBarStyle: 'black-translucent' },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#050507',
+  colorScheme: 'dark',
 };
 
 interface RootLayoutProps {
@@ -30,7 +40,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <StyledRegistry>
-          <RealtimeProvider>{children}</RealtimeProvider>
+          <RealtimeProvider>
+            <AppNav />
+            {children}
+          </RealtimeProvider>
         </StyledRegistry>
       </body>
     </html>

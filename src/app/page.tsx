@@ -2,81 +2,63 @@ import { fetchRooms, fetchRoutines } from '@/lib/clyde';
 import { roomLabel } from '@/lib/rooms/roomLabel';
 import { sortRooms } from '@/lib/rooms/sortRooms';
 
-import PageShell from './_components/shared/PageShell';
 import Floorplan from './_components/Floorplan';
-import RoomControls from './_components/RoomControls';
-import {
-  List,
-  ListRow,
-  RowBody,
-  RowMeta,
-  RowTitle,
-} from './_components/shared/List';
-import {
-  Header,
-  Nav,
-  PageTitle,
-} from './_components/shared/Header';
-import { NavLink } from './_components/shared/NavLink';
-import {
-  ErrorText,
-  FaintText,
-  Section,
-  SectionHeading,
-} from './_components/shared/Section';
+import RoomCard from './_components/RoomCard';
+import PageHeader from './_components/shared/PageHeader';
+import PageShell from './_components/shared/PageShell';
+import { ErrorText, FaintText, Section, SectionHeading } from './_components/shared/Section';
+import * as S from './styles';
 
 export default async function Home() {
   const [rooms, roomsErr] = await fetchRooms();
   const [routinesData] = await fetchRoutines();
-  const sortedRooms = sortRooms(rooms?.rooms ?? []);
   const routineNames = routinesData?.routines.map(r => r.name) ?? [];
 
+  if (roomsErr) {
+    return (
+      <PageShell>
+        <PageHeader title="Home" lede="The Bosch Residence" />
+        <ErrorText>Failed to load rooms: {roomsErr.message}</ErrorText>
+      </PageShell>
+    );
+  }
+
+  const sortedRooms = sortRooms(rooms.rooms);
+
+  if (sortedRooms.length === 0) {
+    return (
+      <PageShell>
+        <PageHeader title="Home" lede="The Bosch Residence" />
+        <FaintText>No rooms configured.</FaintText>
+      </PageShell>
+    );
+  }
+
+  const renderRoom = (room: (typeof sortedRooms)[number]) => (
+    <RoomCard
+      key={room.name}
+      room={room.name}
+      label={roomLabel(room)}
+      lightCount={room.lights.length}
+      routines={routineNames}
+      activeRoutine={room.active_routine}
+      dimFactor={room.dim_factor}
+    />
+  );
+
   return (
-    <PageShell>
-      <Header>
-        <PageTitle>The Bosch Residence</PageTitle>
-        <Nav>
-          <NavLink href="/schedules">Schedules</NavLink>
-          <NavLink href="/friends">Party</NavLink>
-        </Nav>
-      </Header>
-
-      <Section>
-        <SectionHeading>Rooms</SectionHeading>
-        {roomsErr ? (
-          <ErrorText>Failed to load rooms: {roomsErr.message}</ErrorText>
-        ) : sortedRooms.length === 0 ? (
-          <FaintText>No rooms configured.</FaintText>
-        ) : (
-          <List>
-            {sortedRooms.map(room => (
-              <ListRow key={room.name}>
-                <RowBody>
-                  <RowTitle>{roomLabel(room)}</RowTitle>
-                  <RowMeta>
-                    {room.lights.length} light{room.lights.length === 1 ? '' : 's'}
-                    <span className="sep">·</span>
-                    {room.active_routine ?? 'idle'}
-                  </RowMeta>
-                </RowBody>
-                <RoomControls
-                  room={room.name}
-                  routines={routineNames}
-                  activeRoutine={room.active_routine}
-                  dimFactor={room.dim_factor}
-                />
-              </ListRow>
-            ))}
-          </List>
-        )}
-      </Section>
-
-      {!roomsErr && sortedRooms.length > 0 ? (
+    <PageShell isWide>
+      <PageHeader title="Home" lede="The Bosch Residence" />
+      <S.HomeGrid>
         <Section>
+          <SectionHeading>Rooms</SectionHeading>
+          <S.RoomStack>{sortedRooms.map(renderRoom)}</S.RoomStack>
+        </Section>
+        <S.Aside>
           <SectionHeading>Floorplan</SectionHeading>
           <Floorplan rooms={sortedRooms.map(r => ({ name: r.name, lights: r.lights }))} />
-        </Section>
-      ) : null}
+        </S.Aside>
+      </S.HomeGrid>
     </PageShell>
   );
 }

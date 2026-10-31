@@ -6,20 +6,21 @@ export const List = styled.ul`
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid ${theme.colors.divider};
-  border-radius: ${theme.radius.sm};
-
-  & > li + li {
-    border-top: 1px solid ${theme.colors.divider};
-  }
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing.sm};
 `;
 
 export const ListRow = styled.li`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: ${theme.spacing.lg};
+  gap: ${theme.spacing.md};
   padding: ${theme.spacing.md} ${theme.spacing.lg};
+  border-radius: ${theme.radius.lg};
+  border: 1px solid ${theme.colors.borderSubtle};
+  background: ${theme.colors.surface};
+  box-shadow: ${theme.shadow.card};
 `;
 
 export const RowBody = styled.div`
@@ -30,15 +31,18 @@ export const RowBody = styled.div`
 `;
 
 export const RowTitle = styled.div`
-  font-weight: ${theme.fontWeight.medium};
+  font-size: ${theme.fontSize.base};
+  font-weight: ${theme.fontWeight.semibold};
   color: ${theme.colors.text};
+  text-transform: capitalize;
 `;
 
 export const RowMeta = styled.div`
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.textFaint};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.textMuted};
 
   & > span.sep {
     margin: 0 ${theme.spacing.xs};
+    color: ${theme.colors.textFaint};
   }
 `;

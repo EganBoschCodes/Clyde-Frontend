@@ -2,54 +2,55 @@ import styled from 'styled-components';
 
 import { theme } from '@/styles/theme';
 
-export const Screen = styled.div`
-  min-height: 100vh;
-  background: ${theme.colors.background};
-  color: ${theme.colors.text};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 ${theme.spacing.xl};
-`;
+const BUTTON_SIZE = 'min(72vw, 288px)';
 
-export const Stack = styled.div`
+export const Stage = styled.div`
+  flex: 1;
+  min-height: 55dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: ${theme.spacing.xl};
 `;
 
 export const PartyButton = styled.button`
-  width: 256px;
-  height: 256px;
+  width: ${BUTTON_SIZE};
+  height: ${BUTTON_SIZE};
   border: none;
   border-radius: ${theme.radius.full};
-  background: ${theme.colors.accent};
-  color: #ffffff;
+  background: radial-gradient(circle at 30% 25%, ${theme.colors.accentHover}, ${theme.colors.accent} 70%);
+  color: ${theme.colors.onAccent};
+  font: inherit;
   font-size: ${theme.fontSize.xxl};
-  font-weight: ${theme.fontWeight.semibold};
+  font-weight: ${theme.fontWeight.bold};
   letter-spacing: -0.02em;
-  box-shadow: 0 25px 50px -12px rgba(192, 38, 211, 0.4);
+  box-shadow: ${theme.shadow.glow}, 0 0 0 10px ${theme.colors.accentSoft};
   cursor: pointer;
-  transition: background-color 120ms ease, transform 120ms ease, opacity 120ms ease;
-
-  &:hover:not(:disabled) {
-    background: ${theme.colors.accentHover};
-  }
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, opacity 120ms ease, filter 120ms ease;
 
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
 
+  &:focus-visible {
+    outline: 3px solid ${theme.colors.accentText};
+    outline-offset: 6px;
+  }
+
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
+    filter: saturate(0.5);
     cursor: not-allowed;
   }
 `;
 
 export const StatusText = styled.p`
   margin: 0;
-  height: 20px;
-  font-size: ${theme.fontSize.sm};
-  color: ${theme.colors.textFaint};
+  min-height: 24px;
+  text-align: center;
+  font-size: ${theme.fontSize.base};
+  color: ${theme.colors.textMuted};
 `;

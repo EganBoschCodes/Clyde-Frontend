@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import PageHeader from '../_components/shared/PageHeader';
+import PageShell from '../_components/shared/PageShell';
 import * as S from './styles';
 
 interface MiniPartyResponse {
@@ -126,13 +128,14 @@ export default function FriendsPage() {
   const label = status.kind === 'firing' ? 'Starting…' : isBanned ? 'Cooling off' : 'Mini Party';
 
   return (
-    <S.Screen>
-      <S.Stack>
+    <PageShell>
+      <PageHeader title="Party" lede="Start a mini party in every room." />
+      <S.Stage>
         <S.PartyButton type="button" onClick={handleClick} disabled={disabled}>
           {label}
         </S.PartyButton>
         <S.StatusText aria-live="polite">{renderStatus(status, now)}</S.StatusText>
-      </S.Stack>
-    </S.Screen>
+      </S.Stage>
+    </PageShell>
   );
 }

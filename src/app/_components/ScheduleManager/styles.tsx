@@ -5,27 +5,36 @@ import { theme } from '@/styles/theme';
 export const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${theme.spacing.xxl};
+  gap: ${theme.spacing.xl};
 `;
 
 export const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: ${theme.spacing.md};
+  gap: ${theme.spacing.lg};
+  padding: ${theme.spacing.lg};
+  border-radius: ${theme.radius.xl};
+  border: 1px solid ${theme.colors.borderSubtle};
+  background: ${theme.colors.surface};
+  box-shadow: ${theme.shadow.card};
 `;
 
 export const FieldsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: ${theme.spacing.sm};
+  grid-template-columns: minmax(0, 1fr);
+  gap: ${theme.spacing.md};
+
+  @media (min-width: ${theme.breakpoint.tablet}) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 `;
 
 export const Field = styled.label`
   display: flex;
   flex-direction: column;
   gap: ${theme.spacing.xs};
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.textFaint};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.textMuted};
   min-width: 0;
 
   & > select,
@@ -39,8 +48,8 @@ export const DaysField = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${theme.spacing.xs};
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.textFaint};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.textMuted};
 `;
 
 export const DaysRow = styled.div`
@@ -51,47 +60,48 @@ export const DaysRow = styled.div`
 
 export const DayToggle = styled.button<{ $active: boolean }>`
   min-width: 0;
-  padding: ${theme.spacing.xs} ${theme.spacing.xs};
-  border-radius: ${theme.radius.sm};
-  border: 1px solid ${({ $active }) => ($active ? theme.colors.text : theme.colors.border)};
-  background: ${({ $active }) => ($active ? theme.colors.text : 'transparent')};
-  color: ${({ $active }) => ($active ? theme.colors.background : theme.colors.text)};
-  font-size: ${theme.fontSize.xs};
+  min-height: ${theme.size.touch};
+  padding: 0;
+  border-radius: ${theme.radius.md};
+  border: 1px solid ${({ $active }) => ($active ? theme.colors.accent : theme.colors.borderSubtle)};
+  background: ${({ $active }) => ($active ? theme.colors.accentSoft : theme.colors.surfaceRaised)};
+  color: ${({ $active }) => ($active ? theme.colors.accentText : theme.colors.textMuted)};
+  font: inherit;
+  font-size: ${theme.fontSize.sm};
+  font-weight: ${theme.fontWeight.medium};
   cursor: pointer;
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease;
-
-  &:hover {
-    background: ${({ $active }) => ($active ? theme.colors.textMuted : theme.colors.surfaceHover)};
-    border-color: ${({ $active }) => ($active ? theme.colors.textMuted : theme.colors.border)};
-  }
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 `;
 
 export const Actions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: ${theme.spacing.md};
+
+  @media (min-width: ${theme.breakpoint.tablet}) {
+    display: flex;
+    justify-content: flex-end;
+  }
 `;
 
 export const RowError = styled.p`
   margin: ${theme.spacing.xs} 0 0;
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.danger};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.dangerText};
 `;
 
 export const FormError = styled.p`
   margin: 0;
   width: 100%;
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.danger};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.dangerText};
 `;
 
 export const FormStatus = styled.p`
   margin: 0;
   width: 100%;
-  font-size: ${theme.fontSize.xs};
-  color: ${theme.colors.textFaint};
+  font-size: ${theme.fontSize.sm};
+  color: ${theme.colors.textMuted};
 `;

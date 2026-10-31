@@ -12,9 +12,9 @@ export const SectionHeading = styled.h2`
   margin: 0;
   font-size: ${theme.fontSize.xs};
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: ${theme.colors.textFaint};
-  font-weight: ${theme.fontWeight.medium};
+  letter-spacing: 0.1em;
+  color: ${theme.colors.textMuted};
+  font-weight: ${theme.fontWeight.semibold};
 `;
 
 export const MutedText = styled.p`
@@ -31,7 +31,7 @@ export const FaintText = styled.p`
 
 export const ErrorBanner = styled.p`
   margin: 0;
-  border-radius: ${theme.radius.sm};
+  border-radius: ${theme.radius.md};
   border: 1px solid ${theme.colors.dangerBorder};
   background: ${theme.colors.dangerBg};
   color: ${theme.colors.dangerText};
@@ -42,5 +42,5 @@ export const ErrorBanner = styled.p`
 export const ErrorText = styled.p`
   margin: 0;
   color: ${theme.colors.dangerText};
-  font-size: ${theme.fontSize.xs};
+  font-size: ${theme.fontSize.sm};
 `;

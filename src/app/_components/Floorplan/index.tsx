@@ -150,9 +150,9 @@ export default function Floorplan({ rooms }: FloorplanProps) {
   const renderedRef = useRef<Record<string, RenderedLight>>({});
   const animationsRef = useRef<Record<string, LightAnimation>>({});
   const rafRef = useRef<number | null>(null);
-  const [, setRenderTick] = useState(0);
+  const [rendered, setRendered] = useState<Record<string, RenderedLight>>({});
 
-  const forceRender = () => setRenderTick(t => t + 1);
+  const forceRender = () => setRendered({ ...renderedRef.current });
 
   function snapshotCurrent(name: string): RenderedLight {
     const anim = animationsRef.current[name];
@@ -273,7 +273,7 @@ export default function Floorplan({ rooms }: FloorplanProps) {
         strokeLinecap="square"
         strokeLinejoin="miter"
       >
-        {mapped.map(name => renderLamp(name, LAMP_POSITIONS[name]!, renderedRef.current[name]))}
+        {mapped.map(name => renderLamp(name, LAMP_POSITIONS[name]!, rendered[name]))}
         <path
           strokeWidth={12}
           d="M 60 70 H 1450 V 200 H 1700 V 560 H 1820 V 1015 H 1010 V 970 H 880 V 1015 H 60 Z"

@@ -10,9 +10,14 @@ import { List, ListRow, RowBody, RowMeta, RowTitle } from '../shared/List';
 import { FaintText, Section, SectionHeading } from '../shared/Section';
 import * as S from './styles';
 
+export interface RoomOption {
+  name: string;
+  label: string;
+}
+
 interface ScheduleManagerProps {
   initialSchedules: ScheduledEvent[];
-  rooms: string[];
+  rooms: RoomOption[];
   events: string[];
 }
 
@@ -119,7 +124,8 @@ export default function ScheduleManager({
   events,
 }: ScheduleManagerProps) {
   const router = useRouter();
-  const defaultRoom = rooms[0] ?? '';
+  const defaultRoom = rooms[0]?.name ?? '';
+  const roomLabels = new Map(rooms.map(r => [r.name, r.label]));
   const defaultEvent = events[0] ?? '';
   const [form, setForm] = useState<FormState>({
     event: defaultEvent,
@@ -178,7 +184,7 @@ export default function ScheduleManager({
       setTestError(err.message);
       return;
     }
-    setTestStatus(`Fired ${humanizeEvent(form.event)} in ${form.room}.`);
+    setTestStatus(`Fired ${humanizeEvent(form.event)} in ${roomLabels.get(form.room) ?? form.room}.`);
   };
 
   const handleDelete = async (sched: ScheduledEvent) => {
@@ -208,7 +214,7 @@ export default function ScheduleManager({
         <RowBody>
           <RowTitle>{humanizeEvent(s.event)}</RowTitle>
           <RowMeta>
-            {s.room}
+            {roomLabels.get(s.room) ?? s.room}
             <span className="sep">·</span>
             {formatTime(s.time)}
             <span className="sep">·</span>
@@ -216,7 +222,7 @@ export default function ScheduleManager({
           </RowMeta>
           {rowError ? <S.RowError>{rowError}</S.RowError> : null}
         </RowBody>
-        <Button type="button" onClick={() => handleDelete(s)} disabled={deletingKey !== null}>
+        <Button type="button" $tone="danger" onClick={() => handleDelete(s)} disabled={deletingKey !== null}>
           {deletingKey === key ? 'Removing…' : 'Remove'}
         </Button>
       </ListRow>
@@ -229,7 +235,7 @@ export default function ScheduleManager({
   return (
     <S.Container>
       <Section>
-        <SectionHeading>Existing</SectionHeading>
+        <SectionHeading>Upcoming</SectionHeading>
         {sorted.length === 0 ? (
           <FaintText>No schedules yet.</FaintText>
         ) : (
@@ -238,7 +244,7 @@ export default function ScheduleManager({
       </Section>
 
       <Section>
-        <SectionHeading>Add</SectionHeading>
+        <SectionHeading>New schedule</SectionHeading>
         {!canAdd ? (
           <FaintText>{emptyMessage}</FaintText>
         ) : (
@@ -264,8 +270,8 @@ export default function ScheduleManager({
                   onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
                 >
                   {rooms.map(r => (
-                    <option key={r} value={r}>
-                      {r}
+                    <option key={r.name} value={r.name}>
+                      {r.label}
                     </option>
                   ))}
                 </Select>
@@ -303,7 +309,7 @@ export default function ScheduleManager({
               <Button type="button" onClick={handleTest} disabled={adding || testing}>
                 {testing ? 'Testing…' : 'Test'}
               </Button>
-              <Button type="submit" disabled={adding || testing}>
+              <Button type="submit" $tone="primary" disabled={adding || testing}>
                 {adding ? 'Adding…' : 'Add'}
               </Button>
             </S.Actions>
