@@ -9,6 +9,7 @@ export interface StatusResponse {
 
 export interface RoomStatus {
   name: string;
+  display_name?: string;
   lights: string[];
   active_routine: string | null;
   dim_factor: number;

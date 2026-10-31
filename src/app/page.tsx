@@ -1,4 +1,6 @@
 import { fetchRooms, fetchRoutines } from '@/lib/clyde';
+import { roomLabel } from '@/lib/rooms/roomLabel';
+import { sortRooms } from '@/lib/rooms/sortRooms';
 
 import PageShell from './_components/shared/PageShell';
 import Floorplan from './_components/Floorplan';
@@ -26,6 +28,7 @@ import {
 export default async function Home() {
   const [rooms, roomsErr] = await fetchRooms();
   const [routinesData] = await fetchRoutines();
+  const sortedRooms = sortRooms(rooms?.rooms ?? []);
   const routineNames = routinesData?.routines.map(r => r.name) ?? [];
 
   return (
@@ -42,14 +45,14 @@ export default async function Home() {
         <SectionHeading>Rooms</SectionHeading>
         {roomsErr ? (
           <ErrorText>Failed to load rooms: {roomsErr.message}</ErrorText>
-        ) : rooms.rooms.length === 0 ? (
+        ) : sortedRooms.length === 0 ? (
           <FaintText>No rooms configured.</FaintText>
         ) : (
           <List>
-            {rooms.rooms.map(room => (
+            {sortedRooms.map(room => (
               <ListRow key={room.name}>
                 <RowBody>
-                  <RowTitle>{room.name}</RowTitle>
+                  <RowTitle>{roomLabel(room)}</RowTitle>
                   <RowMeta>
                     {room.lights.length} light{room.lights.length === 1 ? '' : 's'}
                     <span className="sep">·</span>
@@ -68,10 +71,10 @@ export default async function Home() {
         )}
       </Section>
 
-      {!roomsErr && rooms.rooms.length > 0 ? (
+      {!roomsErr && sortedRooms.length > 0 ? (
         <Section>
           <SectionHeading>Floorplan</SectionHeading>
-          <Floorplan rooms={rooms.rooms.map(r => ({ name: r.name, lights: r.lights }))} />
+          <Floorplan rooms={sortedRooms.map(r => ({ name: r.name, lights: r.lights }))} />
         </Section>
       ) : null}
     </PageShell>

@@ -1,4 +1,5 @@
 import { fetchEvents, fetchRooms, fetchSchedules } from '@/lib/clyde';
+import { sortRooms } from '@/lib/rooms/sortRooms';
 
 import ScheduleManager from '../_components/ScheduleManager';
 import { Header, PageLede, PageTitle } from '../_components/shared/Header';
@@ -27,7 +28,7 @@ export default async function SchedulesPage() {
       ) : (
         <ScheduleManager
           initialSchedules={schedulesData.schedules}
-          rooms={roomsData.rooms.map(r => r.name)}
+          rooms={sortRooms(roomsData.rooms).map(r => r.name)}
           events={eventsData.events.map(e => e.name)}
         />
       )}
