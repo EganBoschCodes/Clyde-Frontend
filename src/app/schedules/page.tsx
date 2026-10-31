@@ -10,9 +10,11 @@ import { ErrorBanner } from '../_components/shared/Section';
 const LEDE = 'Triggers fire at the given local time on the days you select.';
 
 export default async function SchedulesPage() {
-  const [schedulesData, schedulesErr] = await fetchSchedules();
-  const [roomsData, roomsErr] = await fetchRooms();
-  const [eventsData, eventsErr] = await fetchEvents();
+  const [[schedulesData, schedulesErr], [roomsData, roomsErr], [eventsData, eventsErr]] = await Promise.all([
+    fetchSchedules(),
+    fetchRooms(),
+    fetchEvents(),
+  ]);
   const loadError = schedulesErr ?? roomsErr ?? eventsErr;
 
   if (loadError || !schedulesData || !roomsData || !eventsData) {
