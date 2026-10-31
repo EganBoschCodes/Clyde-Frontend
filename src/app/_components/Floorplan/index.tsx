@@ -2,7 +2,8 @@
 
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { LightState, LightStateResponse } from '@/lib/clyde';
+import type { LightState } from '@/lib/clyde';
+import { fetchLightState } from '@/lib/lights/fetchLightState';
 import { RealtimeContext } from '@/lib/realtime/RealtimeProvider';
 
 import * as S from './styles';
@@ -82,23 +83,6 @@ function fromLightState(state: LightState): RenderedLight {
     brightness: state.brightness ?? (state.on ? MAX_BRIGHTNESS : 0),
     rgb: state.rgb_color ?? DEFAULT_RGB,
   };
-}
-
-async function fetchLightState(
-  light: string,
-  signal: AbortSignal,
-): Promise<LightStateResponse | null> {
-  let res: Response;
-  try {
-    res = await fetch(`/api/clyde/lights/${encodeURIComponent(light)}/state`, {
-      signal,
-      cache: 'no-store',
-    });
-  } catch {
-    return null;
-  }
-  if (!res.ok) return null;
-  return (await res.json().catch(() => null)) as LightStateResponse | null;
 }
 
 function rgbString(rgb: [number, number, number]): string {

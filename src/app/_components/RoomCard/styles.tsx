@@ -4,11 +4,10 @@ import { theme } from '@/styles/theme';
 
 export const Card = styled.article<{ $isOn: boolean }>`
   position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: ${theme.spacing.lg};
-  padding: ${theme.spacing.lg};
+  gap: ${theme.spacing.md};
+  padding: ${theme.spacing.md} ${theme.spacing.lg} ${theme.spacing.lg};
   border-radius: ${theme.radius.xl};
   border: 1px solid ${({ $isOn }) => ($isOn ? 'var(--room-glow-border, ' + theme.colors.borderSubtle + ')' : theme.colors.borderSubtle)};
   background:
@@ -21,7 +20,7 @@ export const Card = styled.article<{ $isOn: boolean }>`
   transition: border-color 400ms ease, background 400ms ease;
 
   @media (min-width: ${theme.breakpoint.tablet}) {
-    padding: ${theme.spacing.xl};
+    padding: ${theme.spacing.lg} ${theme.spacing.xl} ${theme.spacing.xl};
   }
 `;
 
@@ -36,7 +35,8 @@ export const Titles = styled.div`
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: ${theme.spacing.xs};
 `;
 
 export const Name = styled.h2`
@@ -48,18 +48,44 @@ export const Name = styled.h2`
   overflow-wrap: anywhere;
 `;
 
-export const Meta = styled.p`
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: ${theme.spacing.sm};
+export const RoutinePill = styled.button`
+  max-width: 100%;
+  min-height: ${theme.size.touchSm};
+  display: inline-flex;
+  align-items: center;
+  gap: ${theme.spacing.sm};
+  padding: 0 ${theme.spacing.md};
+  border-radius: ${theme.radius.full};
+  border: 1px solid ${theme.colors.borderStrong};
+  background: ${theme.colors.surfaceRaised};
+  color: ${theme.colors.text};
+  font: inherit;
   font-size: ${theme.fontSize.sm};
-  color: ${theme.colors.textMuted};
+  font-weight: ${theme.fontWeight.medium};
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${theme.colors.accentText};
+    outline-offset: 2px;
+  }
 `;
 
-export const Status = styled.span<{ $isOn: boolean }>`
-  color: ${({ $isOn }) => ($isOn ? theme.colors.text : theme.colors.textFaint)};
-  font-weight: ${theme.fontWeight.medium};
+export const PillText = styled.span`
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+export const Chevron = styled.span`
+  color: ${theme.colors.textMuted};
 `;
 
 export const Error = styled.p`

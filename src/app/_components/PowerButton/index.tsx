@@ -2,19 +2,22 @@ import * as S from './styles';
 
 interface PowerButtonProps {
   isOn: boolean;
+  isPending: boolean;
   label: string;
   isDisabled: boolean;
   onToggle: () => void;
 }
 
-export default function PowerButton({ isOn, label, isDisabled, onToggle }: PowerButtonProps) {
+export default function PowerButton({ isOn, isPending, label, isDisabled, onToggle }: PowerButtonProps) {
   return (
     <S.Button
       type="button"
       role="switch"
       aria-checked={isOn}
       aria-label={label}
+      aria-busy={isPending}
       $isOn={isOn}
+      $isPending={isPending}
       onClick={onToggle}
       disabled={isDisabled}
     >

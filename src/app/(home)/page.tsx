@@ -2,22 +2,21 @@ import { fetchRooms, fetchRoutines } from '@/lib/clyde';
 import { roomLabel } from '@/lib/rooms/roomLabel';
 import { sortRooms } from '@/lib/rooms/sortRooms';
 
-import Floorplan from './_components/Floorplan';
-import RoomCard from './_components/RoomCard';
-import PageHeader from './_components/shared/PageHeader';
-import PageShell from './_components/shared/PageShell';
-import { ErrorText, FaintText, Section, SectionHeading } from './_components/shared/Section';
+import Floorplan from '../_components/Floorplan';
+import HomeHeader from '../_components/HomeHeader';
+import RoomCard from '../_components/RoomCard';
+import PageShell from '../_components/shared/PageShell';
+import { ErrorText, FaintText, Section, SectionHeading } from '../_components/shared/Section';
 import * as S from './styles';
 
 export default async function Home() {
-  const [rooms, roomsErr] = await fetchRooms();
-  const [routinesData] = await fetchRoutines();
-  const routineNames = routinesData?.routines.map(r => r.name) ?? [];
+  const [[rooms, roomsErr], [routinesData]] = await Promise.all([fetchRooms(), fetchRoutines()]);
+  const routines = routinesData?.routines ?? [];
 
   if (roomsErr) {
     return (
       <PageShell>
-        <PageHeader title="Home" lede="The Bosch Residence" />
+        <HomeHeader rooms={[]} />
         <ErrorText>Failed to load rooms: {roomsErr.message}</ErrorText>
       </PageShell>
     );
@@ -28,7 +27,7 @@ export default async function Home() {
   if (sortedRooms.length === 0) {
     return (
       <PageShell>
-        <PageHeader title="Home" lede="The Bosch Residence" />
+        <HomeHeader rooms={[]} />
         <FaintText>No rooms configured.</FaintText>
       </PageShell>
     );
@@ -39,26 +38,22 @@ export default async function Home() {
       key={room.name}
       room={room.name}
       label={roomLabel(room)}
-      lightCount={room.lights.length}
-      routines={routineNames}
+      lights={room.lights}
+      routines={routines}
       activeRoutine={room.active_routine}
+      activeEvent={room.active_event ?? null}
       dimFactor={room.dim_factor}
     />
   );
 
   return (
     <PageShell isWide>
-      <PageHeader title="Home" lede="The Bosch Residence" />
-      <S.HomeGrid>
-        <Section>
-          <SectionHeading>Rooms</SectionHeading>
-          <S.RoomStack>{sortedRooms.map(renderRoom)}</S.RoomStack>
-        </Section>
-        <S.Aside>
-          <SectionHeading>Floorplan</SectionHeading>
-          <Floorplan rooms={sortedRooms.map(r => ({ name: r.name, lights: r.lights }))} />
-        </S.Aside>
-      </S.HomeGrid>
+      <HomeHeader rooms={sortedRooms.map(r => r.name)} />
+      <S.RoomGrid>{sortedRooms.map(renderRoom)}</S.RoomGrid>
+      <Section>
+        <SectionHeading>Floorplan</SectionHeading>
+        <Floorplan rooms={sortedRooms.map(r => ({ name: r.name, lights: r.lights }))} />
+      </Section>
     </PageShell>
   );
 }

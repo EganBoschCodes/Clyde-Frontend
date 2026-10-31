@@ -1,58 +1,61 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 
+import type { RoutineInfo } from '@/lib/clyde';
+import { RealtimeContext } from '@/lib/realtime/RealtimeProvider';
 import { useRoomGlow } from '@/lib/realtime/useRoomGlow';
 import { useRoomLive } from '@/lib/realtime/useRoomLive';
-import { setRoomDim } from '@/lib/roomApi/setRoomDim';
 import { setRoomRoutine } from '@/lib/roomApi/setRoomRoutine';
 import { turnRoomLightsOff } from '@/lib/roomApi/turnRoomLightsOff';
+import { routineLabel } from '@/lib/rooms/routineLabel';
+import { useRoomDimControl } from '@/lib/rooms/useRoomDimControl';
 import { titleCase } from '@/lib/text/titleCase';
+import { useTransientMessage } from '@/lib/ui/useTransientMessage';
 
 import DimControl from '../DimControl';
 import PowerButton from '../PowerButton';
-import RoutineChips from '../RoutineChips';
+import RoomEventStatus from '../RoomEventStatus';
+import RoutineSheet from '../RoutineSheet';
 import { glowStyle } from './glowStyle';
 import * as S from './styles';
 
 const DAYLIGHT_ROUTINE = 'daylight';
-const DIM_COMMIT_DELAY_MS = 200;
 
-type Action = 'routine' | 'off' | 'dim';
+type PendingKind = 'power-on' | 'power-off' | 'routine';
 
 interface RoomCardProps {
   room: string;
   label: string;
-  lightCount: number;
-  routines: string[];
+  lights: string[];
+  routines: RoutineInfo[];
   activeRoutine: string | null;
+  activeEvent: string | null;
   dimFactor: number;
 }
 
-function initialSelection(activeRoutine: string | null, routines: string[]): string {
-  if (activeRoutine && routines.includes(activeRoutine)) return activeRoutine;
-  if (routines.includes(DAYLIGHT_ROUTINE)) return DAYLIGHT_ROUTINE;
-  return routines[0] ?? '';
+function defaultRoutine(routines: readonly RoutineInfo[]): string {
+  if (routines.some(r => r.name === DAYLIGHT_ROUTINE)) return DAYLIGHT_ROUTINE;
+  return routines[0]?.name ?? '';
 }
 
-export default function RoomCard({ room, label, lightCount, routines, activeRoutine, dimFactor }: RoomCardProps) {
+export default function RoomCard({ room, label, lights, routines, activeRoutine, activeEvent, dimFactor }: RoomCardProps) {
   const live = useRoomLive(room);
-  const glow = useRoomGlow(room);
+  const glow = useRoomGlow(room, lights);
+  const { patchRoomLive } = useContext(RealtimeContext);
   const effectiveRoutine = live.activeRoutine !== undefined ? live.activeRoutine : activeRoutine;
+  const effectiveEvent = live.activeEvent !== undefined ? live.activeEvent : activeEvent;
   const effectiveDim = live.dimFactor !== undefined ? live.dimFactor : dimFactor;
   const isOn = effectiveRoutine !== null;
 
-  const [pending, setPending] = useState<Action | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string>(() => initialSelection(activeRoutine, routines));
+  const [pending, setPending] = useState<PendingKind | null>(null);
+  const [error, showError] = useTransientMessage();
+  const [lastRoutine, setLastRoutine] = useState<string | null>(activeRoutine);
   const [optimisticOn, setOptimisticOn] = useState<boolean>(isOn);
-  const [dim, setDim] = useState<number>(effectiveDim);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDimDirty, setIsDimDirty] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [seenIsOn, setSeenIsOn] = useState(isOn);
   const [seenRoutine, setSeenRoutine] = useState(effectiveRoutine);
-  const [seenDim, setSeenDim] = useState(effectiveDim);
-  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isStartingRef = useRef(false);
 
   if (seenIsOn !== isOn) {
     setSeenIsOn(isOn);
@@ -61,114 +64,126 @@ export default function RoomCard({ room, label, lightCount, routines, activeRout
 
   if (seenRoutine !== effectiveRoutine) {
     setSeenRoutine(effectiveRoutine);
-    if (effectiveRoutine !== null && routines.includes(effectiveRoutine)) setSelected(effectiveRoutine);
+    if (effectiveRoutine !== null) setLastRoutine(effectiveRoutine);
   }
 
-  if (seenDim !== effectiveDim) {
-    setSeenDim(effectiveDim);
-    if (!isDragging && !isDimDirty) setDim(effectiveDim);
-  }
+  const routineName = (key: string): string => {
+    const info = routines.find(r => r.name === key);
+    return info ? routineLabel(info) : titleCase(key);
+  };
 
-  useEffect(() => {
-    return () => {
-      if (commitTimer.current) clearTimeout(commitTimer.current);
-    };
-  }, []);
-
-  async function applyRoutine(routine: string) {
+  async function applyRoutine(routine: string, kind: PendingKind) {
     if (!routine) return;
-    setPending('routine');
-    setError(null);
+    setPending(kind);
+    showError(null);
     setOptimisticOn(true);
+    setLastRoutine(routine);
     const err = await setRoomRoutine(room, routine);
     setPending(null);
-    if (!err) return;
-    setOptimisticOn(isOn);
-    setError(err.message);
+    isStartingRef.current = false;
+    if (err) {
+      setOptimisticOn(isOn);
+      showError(err.message);
+      return;
+    }
+    patchRoomLive(room, { activeRoutine: routine });
   }
 
   async function turnOff() {
-    setPending('off');
-    setError(null);
+    setPending('power-off');
+    showError(null);
     setOptimisticOn(false);
     const err = await turnRoomLightsOff(room);
     setPending(null);
-    if (!err) return;
-    setOptimisticOn(isOn);
-    setError(err.message);
+    if (err) {
+      setOptimisticOn(isOn);
+      showError(err.message);
+      return;
+    }
+    patchRoomLive(room, { activeRoutine: null });
   }
 
-  async function commitDim(factor: number) {
-    setPending('dim');
-    setError(null);
-    const err = await setRoomDim(room, factor);
-    setPending(null);
-    setIsDimDirty(false);
-    if (err) setError(err.message);
-  }
-
-  const handleDimChange = (next: number) => {
-    setDim(next);
-    setIsDimDirty(true);
-    if (commitTimer.current) clearTimeout(commitTimer.current);
-    commitTimer.current = setTimeout(() => {
-      void commitDim(next);
-    }, DIM_COMMIT_DELAY_MS);
+  const startIfOff = () => {
+    if (optimisticOn || isStartingRef.current) return;
+    isStartingRef.current = true;
+    void applyRoutine(lastRoutine ?? defaultRoutine(routines), 'power-on');
   };
 
-  const handleSelect = (routine: string) => {
-    setSelected(routine);
-    if (optimisticOn) void applyRoutine(routine);
-  };
+  const { dim, changeDim, cancelDim } = useRoomDimControl({
+    room,
+    serverDim: effectiveDim,
+    onBeforeCommit: startIfOff,
+    onError: showError,
+  });
 
   const handleToggle = () => {
     if (optimisticOn) {
       void turnOff();
       return;
     }
-    void applyRoutine(selected);
+    void applyRoutine(lastRoutine ?? defaultRoutine(routines), 'power-on');
   };
 
-  const isBusy = pending === 'routine' || pending === 'off';
-  const toggleDisabled = isBusy || (!optimisticOn && !selected);
-  const runningRoutine = effectiveRoutine ?? selected;
-  const statusText = optimisticOn ? titleCase(runningRoutine) : 'Off';
-  const lightsText = `${lightCount} light${lightCount === 1 ? '' : 's'}`;
+  const openSheet = () => setIsSheetOpen(true);
+  const closeSheet = () => setIsSheetOpen(false);
+
+  const handleSelectRoutine = (routine: string) => {
+    setIsSheetOpen(false);
+    void applyRoutine(routine, 'routine');
+  };
+
+  const isBusy = pending !== null;
+  const pillText = optimisticOn
+    ? routineName(effectiveRoutine ?? lastRoutine ?? '')
+    : lastRoutine
+      ? `Last: ${routineName(lastRoutine)}`
+      : 'Routines';
+  const pillLabel = pending === 'routine' ? 'Applying…' : pillText;
 
   return (
-    <S.Card $isOn={optimisticOn} style={glowStyle(glow)}>
+    <S.Card $isOn={optimisticOn} style={optimisticOn ? glowStyle(glow) : undefined}>
       <S.Header>
         <S.Titles>
           <S.Name>{label}</S.Name>
-          <S.Meta>
-            <S.Status $isOn={optimisticOn}>{statusText}</S.Status>
-            <span>{Math.round(dim * 100)}%</span>
-            <span>{lightsText}</span>
-          </S.Meta>
+          {routines.length > 0 ? (
+            <S.RoutinePill
+              type="button"
+              aria-haspopup="dialog"
+              aria-label={`${label} routine: ${pillText}. Change routine`}
+              disabled={isBusy}
+              onClick={openSheet}
+            >
+              <S.PillText>{pillLabel}</S.PillText>
+              <S.Chevron aria-hidden="true">▾</S.Chevron>
+            </S.RoutinePill>
+          ) : null}
         </S.Titles>
         <PowerButton
           isOn={optimisticOn}
-          label={`${label} lights ${optimisticOn ? 'on' : 'off'}`}
-          isDisabled={toggleDisabled}
+          isPending={pending === 'power-on' || pending === 'power-off'}
+          label={`${label} lights`}
+          isDisabled={isBusy}
           onToggle={handleToggle}
         />
       </S.Header>
-      {routines.length > 0 ? (
-        <RoutineChips
-          routines={routines}
-          selected={selected}
-          isOn={optimisticOn}
-          isDisabled={isBusy}
-          onSelect={handleSelect}
-        />
-      ) : null}
+      {effectiveEvent ? <RoomEventStatus room={room} event={effectiveEvent} /> : null}
       <DimControl
         value={dim}
         label={`${label} brightness`}
-        onChange={handleDimChange}
-        onActiveChange={setIsDragging}
+        isOn={optimisticOn}
+        onChange={changeDim}
+        onCancel={cancelDim}
       />
       {error ? <S.Error role="alert">{error}</S.Error> : null}
+      {isSheetOpen ? (
+        <RoutineSheet
+          roomLabel={label}
+          routines={routines}
+          current={optimisticOn ? effectiveRoutine : null}
+          onSelect={handleSelectRoutine}
+          onClose={closeSheet}
+        />
+      ) : null}
     </S.Card>
   );
 }
