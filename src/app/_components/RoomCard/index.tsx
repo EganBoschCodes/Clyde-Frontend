@@ -2,7 +2,8 @@
 
 import { useContext, useRef, useState } from 'react';
 
-import type { RoutineInfo } from '@/lib/clyde';
+import type { Pin, RoutineInfo } from '@/lib/clyde';
+import { useRoomPins } from '@/lib/lights/useRoomPins';
 import { RealtimeContext } from '@/lib/realtime/RealtimeProvider';
 import { useRoomGlow } from '@/lib/realtime/useRoomGlow';
 import { useRoomLive } from '@/lib/realtime/useRoomLive';
@@ -32,6 +33,7 @@ interface RoomCardProps {
   activeRoutine: string | null;
   activeEvent: string | null;
   dimFactor: number;
+  pins: Record<string, Pin>;
 }
 
 function defaultRoutine(routines: readonly RoutineInfo[]): string {
@@ -39,14 +41,17 @@ function defaultRoutine(routines: readonly RoutineInfo[]): string {
   return routines[0]?.name ?? '';
 }
 
-export default function RoomCard({ room, label, lights, routines, activeRoutine, activeEvent, dimFactor }: RoomCardProps) {
+export default function RoomCard({ room, label, lights, routines, activeRoutine, activeEvent, dimFactor, pins }: RoomCardProps) {
   const live = useRoomLive(room);
   const glow = useRoomGlow(room, lights);
-  const { patchRoomLive } = useContext(RealtimeContext);
+  const { patchRoomLive, clearRoomPins } = useContext(RealtimeContext);
+  const roomPins = useRoomPins(lights, pins);
+  const pinnedCount = Object.keys(roomPins).length;
+  const pinnedOnCount = Object.values(roomPins).filter(pin => pin.on).length;
   const effectiveRoutine = live.activeRoutine !== undefined ? live.activeRoutine : activeRoutine;
   const effectiveEvent = live.activeEvent !== undefined ? live.activeEvent : activeEvent;
   const effectiveDim = live.dimFactor !== undefined ? live.dimFactor : dimFactor;
-  const isOn = effectiveRoutine !== null;
+  const isOn = effectiveRoutine !== null || pinnedOnCount > 0;
 
   const [pending, setPending] = useState<PendingKind | null>(null);
   const [error, showError] = useTransientMessage();
@@ -86,6 +91,7 @@ export default function RoomCard({ room, label, lights, routines, activeRoutine,
       showError(err.message);
       return;
     }
+    clearRoomPins(room);
     patchRoomLive(room, { activeRoutine: routine });
   }
 
@@ -100,6 +106,7 @@ export default function RoomCard({ room, label, lights, routines, activeRoutine,
       showError(err.message);
       return;
     }
+    clearRoomPins(room);
     patchRoomLive(room, { activeRoutine: null });
   }
 
@@ -133,7 +140,8 @@ export default function RoomCard({ room, label, lights, routines, activeRoutine,
   };
 
   const isBusy = pending !== null;
-  const pillText = optimisticOn
+  const isRoutineShown = optimisticOn && (effectiveRoutine !== null || pinnedOnCount === 0);
+  const pillText = isRoutineShown
     ? routineName(effectiveRoutine ?? lastRoutine ?? '')
     : lastRoutine
       ? `Last: ${routineName(lastRoutine)}`
@@ -145,18 +153,25 @@ export default function RoomCard({ room, label, lights, routines, activeRoutine,
       <S.Header>
         <S.Titles>
           <S.Name>{label}</S.Name>
-          {routines.length > 0 ? (
-            <S.RoutinePill
-              type="button"
-              aria-haspopup="dialog"
-              aria-label={`${label} routine: ${pillText}. Change routine`}
-              disabled={isBusy}
-              onClick={openSheet}
-            >
-              <S.PillText>{pillLabel}</S.PillText>
-              <S.Chevron aria-hidden="true">▾</S.Chevron>
-            </S.RoutinePill>
-          ) : null}
+          <S.PillRow>
+            {routines.length > 0 ? (
+              <S.RoutinePill
+                type="button"
+                aria-haspopup="dialog"
+                aria-label={`${label} routine: ${pillText}. Change routine`}
+                disabled={isBusy}
+                onClick={openSheet}
+              >
+                <S.PillText>{pillLabel}</S.PillText>
+                <S.Chevron aria-hidden="true">▾</S.Chevron>
+              </S.RoutinePill>
+            ) : null}
+            {pinnedCount > 0 ? (
+              <S.PinLink href="/lights" aria-label={`${label}: ${pinnedCount} pinned. Open lights`}>
+                {pinnedCount} pinned
+              </S.PinLink>
+            ) : null}
+          </S.PillRow>
         </S.Titles>
         <PowerButton
           isOn={optimisticOn}

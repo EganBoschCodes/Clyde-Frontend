@@ -10,10 +10,11 @@ import {
   type ReactNode,
 } from 'react';
 
+import type { Pin } from '@/lib/clyde';
 import { roomLabel } from '@/lib/rooms/roomLabel';
 
 import { fetchRoomsSnapshot } from './fetchRoomsSnapshot';
-import type { LightOnEvent, RealtimeEvent, RoomStateEvent } from './messages';
+import type { LightOffEvent, LightOnEvent, RealtimeEvent, RoomStateEvent } from './messages';
 
 const INITIAL_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30000;
@@ -22,7 +23,9 @@ type RoomStateMap = Map<string, { active_routine: string | null }>;
 type RoomDimMap = Map<string, number>;
 type RoomEventMap = Map<string, string | null>;
 type RoomLabelMap = Map<string, string>;
+type LightPinMap = Map<string, Pin | null>;
 type LightOnSubscriber = (event: LightOnEvent) => void;
+type LightOffSubscriber = (event: LightOffEvent) => void;
 type RoomStateSubscriber = (event: RoomStateEvent) => void;
 
 export interface RoomLivePatch {
@@ -36,10 +39,14 @@ interface RealtimeContextValue {
   roomDim: RoomDimMap;
   roomEvent: RoomEventMap;
   roomLabels: RoomLabelMap;
+  lightPin: LightPinMap;
   isConnected: boolean;
   resyncCount: number;
   patchRoomLive: (room: string, patch: RoomLivePatch) => void;
+  setLightPin: (room: string | null, light: string, pin: Pin | null) => void;
+  clearRoomPins: (room: string) => void;
   subscribeLightOn: (cb: LightOnSubscriber) => () => void;
+  subscribeLightOff: (cb: LightOffSubscriber) => () => void;
   subscribeRoomState: (cb: RoomStateSubscriber) => () => void;
 }
 
@@ -50,10 +57,14 @@ export const RealtimeContext = createContext<RealtimeContextValue>({
   roomDim: new Map(),
   roomEvent: new Map(),
   roomLabels: new Map(),
+  lightPin: new Map(),
   isConnected: true,
   resyncCount: 0,
   patchRoomLive: () => {},
+  setLightPin: () => {},
+  clearRoomPins: () => {},
   subscribeLightOn: () => noopUnsubscribe,
+  subscribeLightOff: () => noopUnsubscribe,
   subscribeRoomState: () => noopUnsubscribe,
 });
 
@@ -72,6 +83,7 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
   const [roomDim, setRoomDim] = useState<RoomDimMap>(new Map());
   const [roomEvent, setRoomEvent] = useState<RoomEventMap>(new Map());
   const [roomLabels, setRoomLabels] = useState<RoomLabelMap>(new Map());
+  const [lightPin, setLightPinMap] = useState<LightPinMap>(new Map());
   const [isConnected, setIsConnected] = useState(true);
   const [resyncCount, setResyncCount] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
@@ -79,13 +91,22 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelled = useRef(false);
   const lastMessageAt = useRef<Map<string, number>>(new Map());
+  const roomLights = useRef<Map<string, string[]>>(new Map());
   const lightSubscribers = useRef<Set<LightOnSubscriber>>(new Set());
+  const lightOffSubscribers = useRef<Set<LightOffSubscriber>>(new Set());
   const roomStateSubscribers = useRef<Set<RoomStateSubscriber>>(new Set());
 
   const subscribeLightOn = useCallback((cb: LightOnSubscriber) => {
     lightSubscribers.current.add(cb);
     return () => {
       lightSubscribers.current.delete(cb);
+    };
+  }, []);
+
+  const subscribeLightOff = useCallback((cb: LightOffSubscriber) => {
+    lightOffSubscribers.current.add(cb);
+    return () => {
+      lightOffSubscribers.current.delete(cb);
     };
   }, []);
 
@@ -112,6 +133,21 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
     }
   }, []);
 
+  const setLightPin = useCallback((room: string | null, light: string, pin: Pin | null) => {
+    if (room) lastMessageAt.current.set(room, performance.now());
+    setLightPinMap(prev => withEntry(prev, light, pin));
+  }, []);
+
+  const clearRoomPins = useCallback((room: string) => {
+    lastMessageAt.current.set(room, performance.now());
+    const lights = roomLights.current.get(room) ?? [];
+    setLightPinMap(prev => {
+      const next = new Map(prev);
+      for (const light of lights) next.set(light, null);
+      return next;
+    });
+  }, []);
+
   const resync = useCallback(async () => {
     const startedAt = performance.now();
     const [rooms, error] = await fetchRoomsSnapshot();
@@ -135,6 +171,14 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
       for (const r of fresh) next.set(r.name, r.active_event ?? null);
       return next;
     });
+    for (const r of rooms) roomLights.current.set(r.name, r.lights);
+    setLightPinMap(prev => {
+      const next = new Map(prev);
+      for (const r of fresh) {
+        for (const light of r.lights) next.set(light, r.pins?.[light] ?? null);
+      }
+      return next;
+    });
     setResyncCount(count => count + 1);
   }, []);
 
@@ -154,6 +198,14 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
       }
       if (evt.type === 'light_on') {
         for (const cb of lightSubscribers.current) cb(evt);
+        return;
+      }
+      if (evt.type === 'light_off') {
+        for (const cb of lightOffSubscribers.current) cb(evt);
+        return;
+      }
+      if (evt.type === 'light_pin') {
+        setLightPin(evt.room, evt.light, evt.pin);
         return;
       }
       if (evt.type === 'room_state') {
@@ -222,7 +274,7 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [resync, patchRoomLive]);
+  }, [resync, patchRoomLive, setLightPin]);
 
   const value = useMemo<RealtimeContextValue>(
     () => ({
@@ -230,13 +282,31 @@ export default function RealtimeProvider({ children }: RealtimeProviderProps) {
       roomDim,
       roomEvent,
       roomLabels,
+      lightPin,
       isConnected,
       resyncCount,
       patchRoomLive,
+      setLightPin,
+      clearRoomPins,
       subscribeLightOn,
+      subscribeLightOff,
       subscribeRoomState,
     }),
-    [roomState, roomDim, roomEvent, roomLabels, isConnected, resyncCount, patchRoomLive, subscribeLightOn, subscribeRoomState],
+    [
+      roomState,
+      roomDim,
+      roomEvent,
+      roomLabels,
+      lightPin,
+      isConnected,
+      resyncCount,
+      patchRoomLive,
+      setLightPin,
+      clearRoomPins,
+      subscribeLightOn,
+      subscribeLightOff,
+      subscribeRoomState,
+    ],
   );
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;

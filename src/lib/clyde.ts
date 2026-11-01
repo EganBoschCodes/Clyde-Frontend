@@ -7,6 +7,23 @@ export interface StatusResponse {
   service: string;
 }
 
+export interface Pin {
+  on: boolean;
+  rgb_color: [number, number, number] | null;
+  brightness: number | null;
+}
+
+export interface LightInfo {
+  name: string;
+  entity_id: string;
+  room: string | null;
+  pin: Pin | null;
+}
+
+export interface LightsResponse {
+  lights: LightInfo[];
+}
+
 export interface RoomStatus {
   name: string;
   display_name?: string;
@@ -14,6 +31,7 @@ export interface RoomStatus {
   active_routine: string | null;
   active_event?: string | null;
   dim_factor: number;
+  pins?: Record<string, Pin>;
 }
 
 export interface RoomsResponse {
@@ -100,4 +118,12 @@ export function fetchEvents(): Promise<Result<EventsResponse>> {
 
 export function fetchRoutines(): Promise<Result<RoutinesResponse>> {
   return getJson<RoutinesResponse>('/api/routines');
+}
+
+export function fetchLights(): Promise<Result<LightsResponse>> {
+  return getJson<LightsResponse>('/api/lights');
+}
+
+export function fetchLightOutput(light: string): Promise<Result<LightStateResponse>> {
+  return getJson<LightStateResponse>(`/api/lights/${encodeURIComponent(light)}/state`);
 }

@@ -42,6 +42,7 @@ Next.js 16 App Router with TypeScript, styled-components, and Tailwind v4 (`@tai
 |------|---------|
 | `src/app/page.tsx` | Home page with floorplan + room controls |
 | `src/app/friends/` | Friends page |
+| `src/app/lights/` | Lights page: per-light control grouped by room, with pinning |
 | `src/app/schedules/` | Schedules page |
 | `src/app/api/clyde/[...path]/route.ts` | Server-side proxy to Clyde backend |
 | `src/app/_components/Floorplan/` | Interactive SVG floorplan |
@@ -49,7 +50,7 @@ Next.js 16 App Router with TypeScript, styled-components, and Tailwind v4 (`@tai
 | `src/app/_components/ScheduleManager/` | Schedule CRUD UI |
 | `src/app/_components/shared/` | Reusable UI primitives |
 | `src/lib/clyde.ts` | Server-side Clyde API client |
-| `src/lib/realtime/` | Websocket client + React context for live `room_state`, `room_dim`, and `light_on` events |
+| `src/lib/realtime/` | Websocket client + React context for live `room_state`, `room_dim`, `light_on`, `light_off`, and `light_pin` events |
 | `src/lib/styledRegistry.tsx` | styled-components SSR registry |
 
 ---

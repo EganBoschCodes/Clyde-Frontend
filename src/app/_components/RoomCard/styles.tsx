@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import styled from 'styled-components';
 
 import { theme } from '@/styles/theme';
@@ -46,6 +47,35 @@ export const Name = styled.h2`
   letter-spacing: -0.02em;
   line-height: 1.2;
   overflow-wrap: anywhere;
+`;
+
+export const PillRow = styled.div`
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: ${theme.spacing.xs};
+`;
+
+export const PinLink = styled(Link)`
+  min-height: ${theme.size.touchSm};
+  display: inline-flex;
+  align-items: center;
+  padding: 0 ${theme.spacing.sm};
+  border-radius: ${theme.radius.full};
+  color: ${theme.colors.textMuted};
+  font-size: ${theme.fontSize.sm};
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: ${theme.colors.surfaceHover};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${theme.colors.accentText};
+    outline-offset: 2px;
+  }
 `;
 
 export const RoutinePill = styled.button`

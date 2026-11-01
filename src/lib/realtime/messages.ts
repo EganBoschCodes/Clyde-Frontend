@@ -1,3 +1,5 @@
+import type { Pin } from '@/lib/clyde';
+
 export interface RoomStateEvent {
   type: 'room_state';
   room: string;
@@ -25,4 +27,24 @@ export interface LightOnEvent {
   transition: number | null;
 }
 
-export type RealtimeEvent = RoomStateEvent | RoomDimEvent | RoomEventEvent | LightOnEvent;
+export interface LightOffEvent {
+  type: 'light_off';
+  room: string;
+  light: string;
+  transition: number | null;
+}
+
+export interface LightPinEvent {
+  type: 'light_pin';
+  room: string;
+  light: string;
+  pin: Pin | null;
+}
+
+export type RealtimeEvent =
+  | RoomStateEvent
+  | RoomDimEvent
+  | RoomEventEvent
+  | LightOnEvent
+  | LightOffEvent
+  | LightPinEvent;

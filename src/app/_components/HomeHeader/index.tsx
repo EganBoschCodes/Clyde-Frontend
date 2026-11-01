@@ -13,7 +13,7 @@ interface HomeHeaderProps {
 }
 
 export default function HomeHeader({ rooms }: HomeHeaderProps) {
-  const { patchRoomLive } = useContext(RealtimeContext);
+  const { patchRoomLive, clearRoomPins } = useContext(RealtimeContext);
   const [isPending, setIsPending] = useState(false);
   const [error, showError] = useTransientMessage();
 
@@ -23,8 +23,10 @@ export default function HomeHeader({ rooms }: HomeHeaderProps) {
     const results = await Promise.all(
       rooms.map(async room => {
         const err = await turnRoomLightsOff(room);
-        if (!err) patchRoomLive(room, { activeRoutine: null });
-        return err;
+        if (err) return err;
+        clearRoomPins(room);
+        patchRoomLive(room, { activeRoutine: null });
+        return null;
       }),
     );
     setIsPending(false);

@@ -26,6 +26,14 @@ const HOME_ICON = (
   </svg>
 );
 
+const LIGHTS_ICON = (
+  <svg {...ICON_PROPS}>
+    <path d="M9 17.5h6" />
+    <path d="M10 21h4" />
+    <path d="M12 3.5a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3.5z" />
+  </svg>
+);
+
 const STUDIO_ICON = (
   <svg {...ICON_PROPS}>
     <path d="M4 20l1.2-4.2L15.8 5.2a2.1 2.1 0 0 1 3 3L8.2 18.8z" />
@@ -50,6 +58,7 @@ const PARTY_ICON = (
 
 export const TABS: readonly Tab[] = [
   { href: '/', label: 'Home', icon: HOME_ICON },
+  { href: '/lights', label: 'Lights', icon: LIGHTS_ICON },
   { href: '/studio', label: 'Studio', icon: STUDIO_ICON },
   { href: '/schedules', label: 'Schedules', icon: SCHEDULES_ICON },
   { href: '/friends', label: 'Party', icon: PARTY_ICON },

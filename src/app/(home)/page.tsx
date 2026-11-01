@@ -43,6 +43,7 @@ export default async function Home() {
       activeRoutine={room.active_routine}
       activeEvent={room.active_event ?? null}
       dimFactor={room.dim_factor}
+      pins={room.pins ?? {}}
     />
   );
 

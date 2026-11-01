@@ -118,7 +118,7 @@ Rendered once in the root layout inside `RealtimeProvider`. It mounts, in order:
 - At 768px and up: sticky top bar (64px) with the brand on the left and pill-shaped tabs on the right; the active tab gets an `accentSoft` pill.
 - Active tab: `accentText` color and `aria-current="page"`. Inactive: `textFaint`.
 - Icons are 24px, 1.8 stroke, round caps, `currentColor`, `aria-hidden`; labels are short single words.
-- Tab count must fit 360px: each tab gets `flex: 1`, so five tabs are about 72px each. Keep labels to one short word.
+- Tabs, in order: Home, Lights, Studio, Schedules, Party. Tab count must fit 360px: each tab gets `flex: 1`, so five tabs are 72px each. Keep labels to one short word.
 
 ### PageShell (`shared/PageShell`)
 
@@ -169,7 +169,7 @@ Folder convention: `Component/index.tsx` plus `Component/styles.tsx` imported as
 | `DimControl` | Brightness slider plus four presets (5, 20, 50, 100%). See gesture rules below. |
 | Pills (`RoutinePill`, `AllOffButton`) | 44px high, fully rounded, `borderStrong`. Used for secondary actions that open or fire something. |
 | Segmented / toggle groups (`DayToggle`, Studio style picker) | Choose one or several from a small fixed set. Active: `accentSoft` background and bright border. Multi-select uses `aria-pressed`; single-select uses `role="radiogroup"` with `role="radio"` and arrow-key navigation. |
-| Chips / quick-color dots | Round 44px swatches with a hairline outline for color shortcuts. |
+| Chips / quick-color dots | Round 44px swatches with a hairline outline for color shortcuts. Single choice: `role="radiogroup"` with `role="radio"` dots (`LightColorPicker`). |
 | Native color input | Wrapped in a 48px label with the input oversized inside an `overflow: hidden` box (Studio palette). |
 
 ### DimControl gesture rules
@@ -185,17 +185,18 @@ The slider fixes a classic phone problem: a horizontal drag must not hijack vert
 - The readout is drawn twice, with the second copy clipped to the fill and colored for contrast against the glow (`--room-glow-ink`).
 - Dragging while the room is off starts the default routine first (`onBeforeCommit`).
 
-### Routine bottom sheet (`RoutineSheet`)
+### Bottom sheets (`shared/Sheet`, used by `RoutineSheet` and `LightSheet`)
 
-The reference pattern for every modal sheet:
+`shared/Sheet` is the shell for every modal sheet; build new sheets as content inside it, never a second copy of the shell:
 
 - Rendered through `createPortal` into `document.body`; backdrop click closes.
 - `role="dialog"`, `aria-modal="true"`, `aria-labelledby` the title.
 - On open: lock body scroll, move focus to the checked option (or first focusable). On close: restore scroll and return focus to the opener.
 - Escape closes; Tab and Shift+Tab are trapped inside the sheet.
-- Options are a `radiogroup` per section with arrow-key roving focus; 48px rows; the current one shows a check and `accentSoft` fill.
+- **Closes by dragging down.** The handle and title strip is the grab zone (`touch-action: none`, so it never fights page scroll). Release past 30% of the sheet height, or with a quick downward flick, dismisses; otherwise it springs back. The scrim fades with the drag. Content below the title scrolls normally.
+- There is no visible Close button. Other ways out: Escape, tapping the scrim, and a visually hidden Close button (last in tab order, revealed on keyboard focus) for assistive tech.
+- Single-choice lists are a `radiogroup` per section with arrow-key focus movement (`lib/ui/moveRadioFocus`); 48px rows; the current one shows a check and `accentSoft` fill.
 - Bottom-docked with a grab handle on phones, centered at 768+; `max-height: 85dvh`, body scrolls with `overscroll-behavior: contain`; bottom padding includes the safe-area inset.
-- Always includes a visible Close button.
 
 ### Inline confirm (no `window.confirm`)
 
@@ -212,6 +213,18 @@ Destructive actions swap the button for a prompt in place:
 - `ConnectionPill`: `role="status"`, centered at the top, "Reconnecting…", shown only while the socket is down; it ignores pointer events.
 - `ErrorBanner`: boxed error for page-level failures; `ErrorText`: plain red line for inline errors.
 
+### Lights tab and pinning
+
+A light is controlled on its own at `/lights`. Touching a light **pins** it: it leaves its room's routine and holds the manual state while the routine keeps animating the other lights. Rejoin releases it; if no routine runs it just stays as it is, unpinned.
+
+- `LightsRoomSection`: one section per room in standard room order (`sortRooms`), with a compact `LightRow` per light. Lights with no room go under "Other".
+- `LightRow`: swatch and name (a large tap target that opens `LightSheet`), status line, and a `PowerButton`. The swatch and glow come from the light's real output: seeded server-side from `/state`, then updated from `light_on` and `light_off`.
+- Status line: "Following <Routine>", "Pinned", "Off", or "Off · Pinned" (plain "On" when no routine runs).
+- `LightSheet`: power, brightness (`DimControl`, brightness 1 to 255 mapped to 0.01 to 1), `LightColorPicker` (six whites from 2200K to 6500K, curated colors, native picker), and one helper sentence that explains pinning. When pinned, a Rejoin <Routine> button (or Unpin when no routine runs).
+- Changes commit through `useLightControl`: optimistic, throttled to 150ms, seq-numbered, stale echoes ignored for 400ms, errors shown inline and auto-cleared.
+- Home: `RoomCard` shows "N pinned" (a link to `/lights`) beside the routine pill. A room counts as on if a routine is active or any pinned light is on, so turning on only a bedside lamp lights that card. The room power button turns the room off and clears its pins; starting a routine also clears them.
+- Pin state lives in `RealtimeContext` (`lightPin`, `setLightPin`, `clearRoomPins`), seeded from `GET /api/rooms` (`pins`) and updated by `light_pin` messages.
+
 ### Studio controls
 
 - `StudioSwatch`: renders a routine's palette as the animation it will produce (drift, pulse, flicker, chase). It must honor `prefers-reduced-motion`.
@@ -227,6 +240,7 @@ Destructive actions swap the button for a prompt in place:
 |-------|--------------|
 | **On** | Card border and wash take the live glow color; power button filled with glow; dim fill glows; the routine pill names the routine. |
 | **Off** | Neutral card; power button raised with strong border; dim fill uses `offFill` and the readout says "Off"; pill reads "Last: <Routine>" so one tap restores it. |
+| **Pinned** | Status line reads "Pinned" (full-strength text instead of muted); the room card shows "N pinned" and the light sheet explains it and offers Rejoin or Unpin. |
 | **Event running** | `RoomEventStatus` row in the card plus the global `EventBanner`, both with Cancel. |
 | **Pending** | The acting control is disabled and dimmed to 0.6 opacity with `aria-busy`; the routine pill text becomes "Applying…". The UI flips optimistically at the same time. |
 | **Error** | Red line under the control (`role="alert"`) that clears itself after 5 seconds (`useTransientMessage`). The optimistic state reverts. |
@@ -242,7 +256,7 @@ Never rely on color alone: state also changes label text, `aria-checked`, or sha
 
 The root `RealtimeProvider` owns one WebSocket (`NEXT_PUBLIC_CLYDE_WS_URL`) and exposes it through `RealtimeContext`.
 
-**Events handled:** `room_state`, `room_dim`, `room_event`, and per-light `light_on`. Room-level events go into maps; `light_on` fans out to subscribers (`subscribeLightOn`) so only interested hooks re-render.
+**Events handled:** `room_state`, `room_dim`, `room_event`, `light_pin`, and per-light `light_on` and `light_off`. Room-level events and pins go into maps; `light_on` and `light_off` fan out to subscribers (`subscribeLightOn`, `subscribeLightOff`) so only interested hooks re-render.
 
 **Rules for any live-updating control:**
 
@@ -310,6 +324,7 @@ Reduced-motion users get no animation; state changes still apply instantly.
 - **Use `minmax(0, 1fr)`** in grids and `min-width: 0` on flex children that hold text or form controls. Without them, long content or an intrinsic input width pushes the layout past the card.
 - **Native `input[type=time|date]` on iOS Safari** has an intrinsic minimum width and ignores `width: 100%` unless appearance is reset. Use `TimeInput` from `shared/Control` (display block, `appearance: none`, `min-width: 0`, `max-width: 100%`, inner value left-aligned).
 - **Hooks that subscribe to realtime** must unsubscribe in cleanup; seeds from HTTP must be aborted on unmount (`AbortController`).
+- **Sheets render through a portal into `document.body`**, so only mount them after an interaction (conditionally rendered on open state), never during server render.
 - **Sheets lock body scroll** by setting `overflow: hidden` on `body`; restore the previous value on close, not `''`.
 - **Never send state-changing requests from tests or screenshots** against the real backend; these are real lights.
 
@@ -342,4 +357,5 @@ Documented so they are not copied further. Fix opportunistically.
 | Z-index | `AppNav` and `StudioEditor` use literals (10, 5) rather than `theme.zIndex` | Use `theme.zIndex.*` |
 | Raw values | `globals.css` and the viewport `themeColor` hardcode the background hex; some sizes (sheet max-width 520, skeleton heights, grab handle) are literal | Add a token if a value repeats |
 | Focus ring | Slider track uses a 3px box-shadow ring instead of an outline | Outline `2px accentText` for everything else |
+| Close affordance | Sheets have no visible Close button (drag down, Escape, or tap the scrim); the hidden button is the only labelled alternative | Keep it that way unless a user asks for a button |
 | Loading and error boundaries | Present for Home and Schedules only; Studio omits loading, Party has neither | Provide both for new pages |

@@ -18,7 +18,7 @@ interface LightGlow {
 }
 
 export function useRoomGlow(room: string, lights: readonly string[]): Rgb | null {
-  const { subscribeLightOn, subscribeRoomState, resyncCount } = useContext(RealtimeContext);
+  const { subscribeLightOn, subscribeLightOff, subscribeRoomState, resyncCount } = useContext(RealtimeContext);
   const [rgb, setRgb] = useState<Rgb | null>(null);
   const lightMap = useRef<Map<string, LightGlow>>(new Map());
   const lightEventAt = useRef<Map<string, number>>(new Map());
@@ -57,6 +57,14 @@ export function useRoomGlow(room: string, lights: readonly string[]): Rgb | null
       publish();
     });
 
+    const unsubscribeOff = subscribeLightOff(evt => {
+      if (evt.room !== room) return;
+      const previous = lightMap.current.get(evt.light);
+      lightEventAt.current.set(evt.light, performance.now());
+      lightMap.current.set(evt.light, { on: false, rgb: previous?.rgb ?? WARM_WHITE });
+      publish();
+    });
+
     const unsubscribeState = subscribeRoomState(evt => {
       if (evt.room !== room || evt.active_routine !== null) return;
       const now = performance.now();
@@ -86,11 +94,12 @@ export function useRoomGlow(room: string, lights: readonly string[]): Rgb | null
     return () => {
       controller.abort();
       unsubscribeLight();
+      unsubscribeOff();
       unsubscribeState();
       if (trailingTimer.current) clearTimeout(trailingTimer.current);
       trailingTimer.current = null;
     };
-  }, [room, lightsKey, resyncCount, subscribeLightOn, subscribeRoomState]);
+  }, [room, lightsKey, resyncCount, subscribeLightOn, subscribeLightOff, subscribeRoomState]);
 
   return rgb;
 }
